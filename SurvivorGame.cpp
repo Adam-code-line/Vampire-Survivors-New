@@ -193,6 +193,19 @@ void SurvivorGame::HandleCollisions() {
         }
     }
 
+    // 剑气与敌人碰撞
+    weaponSystem->CheckSwordAuraCollisions(enemies);
+
+    // 处理剑气击杀敌人后的奖励
+    for (auto& enemy : enemies) {
+        if (!enemy->active) {
+            gems.push_back(std::make_unique<ExperienceGem>(
+                enemy->position, enemy->GetExperienceValue()));
+            score += 20; // 剑气击杀给更多分数
+            itemSystem->SpawnItem(enemy->position);
+        }
+    }
+
     // 敌人与玩家碰撞
     for (auto& enemy : enemies) {
         if (enemy->active && player->CheckCollision(*enemy)) {
@@ -265,6 +278,9 @@ void SurvivorGame::Render() {
     for (auto& melee : meleeAttacks) {
         melee->Render();
     }
+
+    // 渲染武器系统（包括剑气）
+    weaponSystem->Render();
 
     player->Render();
     DrawUI();

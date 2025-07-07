@@ -64,6 +64,12 @@ void ImageManager::LoadCharacterImages() {
     LoadImage("cut2_right", _T("img\\cut2_right.png"));
     LoadImage("cut3_right", _T("img\\cut3_right.png"));
     
+    // 加载剑气图片（四个方向）
+    LoadImage("attack_up", _T("img\\attack_up.png"));
+    LoadImage("attack_down", _T("img\\attack_down.png"));
+    LoadImage("attack_left", _T("img\\attack_left.png"));
+    LoadImage("attack_right", _T("img\\attack_right.png"));
+    
     // 加载背景图片
     LoadImage("background", _T("img\\background.png"));
     
@@ -128,6 +134,48 @@ void ImageManager::DrawImageWithTransparency(IMAGE* img, int x, int y) {
     } else {
         // 备用方案
         putimage(x, y, img);
+    }
+}
+
+// 缩放绘制方法
+void ImageManager::DrawImageScaled(IMAGE* img, int x, int y, float scale) {
+    if (!img || scale <= 0) return;
+    
+    int originalWidth = img->getwidth();
+    int originalHeight = img->getheight();
+    int scaledWidth = (int)(originalWidth * scale);
+    int scaledHeight = (int)(originalHeight * scale);
+    
+    if (scale == 1.0f) {
+        // 无需缩放，直接绘制
+        DrawImageWithTransparency(img, x, y);
+        return;
+    }
+    
+    // 创建缩放后的临时图像
+    IMAGE scaledImg;
+    scaledImg.Resize(scaledWidth, scaledHeight);
+    
+    DWORD* srcBuf = GetImageBuffer(img);
+    DWORD* dstBuf = GetImageBuffer(&scaledImg);
+    
+    if (srcBuf && dstBuf) {
+        // 简单的最近邻缩放
+        for (int y = 0; y < scaledHeight; y++) {
+            for (int x = 0; x < scaledWidth; x++) {
+                int srcX = (int)(x / scale);
+                int srcY = (int)(y / scale);
+                
+                if (srcX < originalWidth && srcY < originalHeight) {
+                    dstBuf[y * scaledWidth + x] = srcBuf[srcY * originalWidth + srcX];
+                }
+            }
+        }
+        
+        DrawImageWithTransparency(&scaledImg, x, y);
+    } else {
+        // 备用方案：直接绘制原图
+        DrawImageWithTransparency(img, x, y);
     }
 }
 
