@@ -1,19 +1,28 @@
 #include "SurvivorGame.h"
-#include "ImageManager.h"  // 新增
+#include "ImageManager.h"
 
 SurvivorGame::SurvivorGame() : gameTime(0), gameOver(false), score(0), 
                                selectedCharacter(CharacterType::WARRIOR) {
 }
 
 void SurvivorGame::Run() {
+    // 显示开始界面
+    StartScreen startScreen;
+    if (!startScreen.ShowStartScreen()) {
+        return; // 用户选择退出
+    }
+    
     // 显示角色选择菜单
     selectedCharacter = ShowCharacterSelection();
     
-    // 初始化图形窗口
+    // 重新初始化图形窗口用于游戏
+    closegraph();
     initgraph(WINDOW_WIDTH, WINDOW_HEIGHT);
-    setbkcolor(RGB(34, 139, 34));
     
-    // 加载图片资源 - 新增
+    // 移除原来的背景色设置，因为现在使用图片背景
+    // setbkcolor(RGB(34, 139, 34));
+    
+    // 加载图片资源
     ImageManager* imgManager = ImageManager::GetInstance();
     imgManager->LoadCharacterImages();
     
@@ -23,9 +32,9 @@ void SurvivorGame::Run() {
     // 设置中文字体支持
     LOGFONT font;
     gettextstyle(&font);
-    _tcscpy_s(font.lfFaceName, _T("SimHei"));  // 使用黑体
-    font.lfCharSet = GB2312_CHARSET;           // 设置字符集
-    font.lfQuality = ANTIALIASED_QUALITY;     // 抗锯齿
+    _tcscpy_s(font.lfFaceName, _T("SimHei"));
+    font.lfCharSet = GB2312_CHARSET;
+    font.lfQuality = ANTIALIASED_QUALITY;
     settextstyle(&font);
     
     BeginBatchDraw();
@@ -39,7 +48,7 @@ void SurvivorGame::Run() {
     EndBatchDraw();
     ShowGameOver();
     
-    // 清理图片资源 - 新增
+    // 清理图片资源
     imgManager->ReleaseAll();
     
     closegraph();
@@ -103,13 +112,11 @@ void SurvivorGame::Update() {
         skillSystem->TriggerSkill();
     }
 
-    // 移除空格键的360度近战攻击
-
     player->Update(deltaTime);
     weaponSystem->Update(deltaTime, enemies);
     spawner->Update(deltaTime, enemies);
     skillSystem->Update(deltaTime);
-    itemSystem->Update(deltaTime);  // 新增
+    itemSystem->Update(deltaTime);
 
     for (auto& bullet : bullets) {
         bullet->Update(deltaTime);
@@ -127,7 +134,7 @@ void SurvivorGame::Update() {
         gem->Update(deltaTime);
     }
     
-    for (auto& item : items) {  // 新增
+    for (auto& item : items) {
         item->Update(deltaTime);
     }
 
@@ -140,6 +147,7 @@ void SurvivorGame::Update() {
 }
 
 void SurvivorGame::HandleCollisions() {
+    // 子弹与敌人碰撞
     for (auto& bullet : bullets) {
         if (!bullet->active) continue;
 
@@ -154,12 +162,16 @@ void SurvivorGame::HandleCollisions() {
                     gems.push_back(std::make_unique<ExperienceGem>(
                         enemy->position, enemy->GetExperienceValue()));
                     score += 10;
+                    
+                    // 在敌人死亡时生成道具
+                    itemSystem->SpawnItem(enemy->position);
                 }
                 break;
             }
         }
     }
 
+    // 近战攻击与敌人碰撞
     for (auto& melee : meleeAttacks) {
         if (!melee->active) continue;
 
@@ -173,11 +185,15 @@ void SurvivorGame::HandleCollisions() {
                     gems.push_back(std::make_unique<ExperienceGem>(
                         enemy->position, enemy->GetExperienceValue()));
                     score += 15;
+                    
+                    // 在敌人死亡时生成道具
+                    itemSystem->SpawnItem(enemy->position);
                 }
             }
         }
     }
 
+    // 敌人与玩家碰撞
     for (auto& enemy : enemies) {
         if (enemy->active && player->CheckCollision(*enemy)) {
             player->TakeDamage(1);
@@ -185,6 +201,7 @@ void SurvivorGame::HandleCollisions() {
         }
     }
 
+    // 经验宝石收集
     for (auto& gem : gems) {
         if (gem->active && player->CheckCollision(*gem)) {
             player->GainExperience(gem->GetValue());
@@ -194,13 +211,6 @@ void SurvivorGame::HandleCollisions() {
                 weaponSystem->UpgradeFireRate(1.1f);
                 weaponSystem->UpgradeMeleeRate(1.1f);
             }
-        }
-    }
-
-    // 在敌人死亡时生成道具
-    for (auto& enemy : enemies) {
-        if (!enemy->active && enemy->health <= 0) {
-            itemSystem->SpawnItem(enemy->position);
         }
     }
 
@@ -230,7 +240,11 @@ void SurvivorGame::CleanupObjects() {
 }
 
 void SurvivorGame::Render() {
-    cleardevice();
+    // 不再使用 cleardevice()，而是直接绘制背景图片
+    
+    // 绘制背景图片
+    ImageManager* imgManager = ImageManager::GetInstance();
+    imgManager->DrawScaledBackground(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     for (auto& gem : gems) {
         gem->Render();
@@ -508,7 +522,18 @@ void SurvivorGame::DrawItemEffects() {
 }
 
 void SurvivorGame::ShowGameOver() {
-    cleardevice();
+    // 在游戏结束界面也使用背景图片
+    ImageManager* imgManager = ImageManager::GetInstance();
+    imgManager->DrawScaledBackground(WINDOW_WIDTH, WINDOW_HEIGHT);
+    
+    // 添加半透明遮罩
+    setfillcolor(RGB(0, 0, 0));
+    setfillstyle(BS_SOLID);
+    // 创建半透明效果
+    for (int alpha = 0; alpha < 128; alpha += 8) {
+        setfillcolor(RGB(alpha/5, alpha/5, alpha/5));
+        solidrectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    }
 
     settextcolor(RED);
     settextstyle(48, 0, _T("Arial"));

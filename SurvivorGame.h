@@ -4,14 +4,15 @@
 #include "Bullet.h"
 #include "MeleeAttack.h"
 #include "ExperienceGem.h"
-#include "Item.h"  // 新增
+#include "Item.h"
 #include "WeaponSystem.h"
 #include "EnemySpawner.h"
 #include "SkillSystem.h"
-#include "ItemSystem.h"  // 新增
+#include "ItemSystem.h"
 #include "GameConfig.h"
 #include "Character.h"
 #include "MainMenu.h"
+#include "StartScreen.h"  // 添加开始界面头文件
 #include <graphics.h>
 #include <vector>
 #include <memory>
@@ -28,11 +29,11 @@ private:
     std::vector<std::unique_ptr<Bullet>> bullets;
     std::vector<std::unique_ptr<MeleeAttack>> meleeAttacks;
     std::vector<std::unique_ptr<ExperienceGem>> gems;
-    std::vector<std::unique_ptr<Item>> items;  // 新增：道具列表
+    std::vector<std::unique_ptr<Item>> items;
     std::unique_ptr<EnhancedWeaponSystem> weaponSystem;
     std::unique_ptr<EnemySpawner> spawner;
     std::unique_ptr<SkillSystem> skillSystem;
-    std::unique_ptr<ItemSystem> itemSystem;  // 新增：道具系统
+    std::unique_ptr<ItemSystem> itemSystem;
 
     float gameTime;
     bool gameOver;
@@ -56,6 +57,6 @@ private:
     void ShowGameOver();
     void DrawEnemyLevelInfo();
     void DrawSkillUI();
-    void DrawItemEffects();  // 新增：显示道具效果
+    void DrawItemEffects();
     CharacterData GetCharacterData(CharacterType type);
 };

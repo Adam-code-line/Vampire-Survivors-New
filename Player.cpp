@@ -1,10 +1,15 @@
 #include "Player.h"
 #include "ImageManager.h"
 
-Player::Player(Vector2 pos, CharacterType type) : GameObject(pos, 20), speed(150.0f), level(1),
-    experience(0), experienceToNext(100),
-    attackCooldown(1.0f), attackTimer(0), characterType(type),
-    useImageRendering(false) {
+Player::Player(Vector2 pos, CharacterType type) 
+    : GameObject(pos, 15.0f), characterType(type),  // 添加radius参数
+      slashAnimationTimer(0), slashAnimationDuration(0.3f) {
+    speed = 150.0f;
+    level = 1;
+    experience = 0;
+    experienceToNext = 100;
+    attackCooldown = 1.0f;
+    attackTimer = 0;
     health = maxHealth = 100;
     SetCharacterType(type);
     LoadCharacterImage();
@@ -72,6 +77,14 @@ void Player::Update(float deltaTime) {
     HandleInput(deltaTime);
     attackTimer -= deltaTime;
 
+    // 更新斩击动画计时器
+    if (slashAnimationTimer > 0) {
+        slashAnimationTimer -= deltaTime;
+        if (slashAnimationTimer < 0) {
+            slashAnimationTimer = 0;
+        }
+    }
+    
     // 边界检测
     position.x = (float)max((float)radius, min((float)(WINDOW_WIDTH - radius), position.x));
     position.y = (float)max((float)radius, min((float)(WINDOW_HEIGHT - radius), position.y));
@@ -92,39 +105,66 @@ void Player::HandleInput(float deltaTime) {
 }
 
 void Player::Render() {
-    if (useImageRendering) {
-        // 使用图片渲染
-        ImageManager* imgManager = ImageManager::GetInstance();
-        IMAGE* characterImage = imgManager->GetImage(characterImageKey);
+    ImageManager* imgManager = ImageManager::GetInstance();
+    
+    // 检查是否在播放斩击动画
+    if (slashAnimationTimer > 0) {
+        // 斩击动画期间 - 只显示斩击动画，不显示角色模型
+        float animationProgress = (slashAnimationDuration - slashAnimationTimer) / slashAnimationDuration;
+        int frameIndex = (int)(animationProgress * 3); // 3帧动画
         
-        if (characterImage) {
-            int imageWidth = characterImage->getwidth();
-            int imageHeight = characterImage->getheight();
-            
-            // 计算绘制位置（以角色中心为基准）
-            int drawX = (int)position.x - imageWidth / 2;
-            int drawY = (int)position.y - imageHeight / 2;
-            
-            // 简单直接绘制，不处理透明
-            putimage(drawX, drawY, characterImage);
-            
+        std::string frameName;
+        switch (frameIndex) {
+            case 0: frameName = "cut1"; break;
+            case 1: frameName = "cut2"; break;
+            default: frameName = "cut3"; break;
+        }
+        
+        // 绘制斩击动画帧
+        IMAGE* slashImg = imgManager->GetImage(frameName);
+        if (slashImg) {
+            int drawX = (int)position.x - slashImg->getwidth() / 2;
+            int drawY = (int)position.y - slashImg->getheight() / 2;
+            imgManager->DrawImageWithTransparency(slashImg, drawX, drawY);
         } else {
-            // 图片加载失败，使用备用渲染
-            useImageRendering = false;
+            // 如果斩击图片加载失败，显示一个特殊效果
+            setfillcolor(RGB(255, 255, 0)); // 黄色闪光效果
+            fillcircle((int)position.x, (int)position.y, 20);
+        }
+    } else {
+        // 正常状态 - 显示角色模型
+        std::string characterKey;
+        switch (characterType) {
+            case CharacterType::WARRIOR:
+                characterKey = "warrior";
+                break;
+            case CharacterType::MAGE:
+                characterKey = "mage";
+                break;
+            case CharacterType::ARCHER:
+                characterKey = "archer";
+                break;
+            case CharacterType::ASSASSIN:
+                characterKey = "assassin";
+                break;
+            default:
+                characterKey = "warrior";
+                break;
+        }
+        
+        IMAGE* characterImg = imgManager->GetImage(characterKey);
+        if (characterImg) {
+            int drawX = (int)position.x - characterImg->getwidth() / 2;
+            int drawY = (int)position.y - characterImg->getheight() / 2;
+            imgManager->DrawImageWithTransparency(characterImg, drawX, drawY);
+        } else {
+            // 备用绘制：如果图片加载失败，使用几何图形
+            setfillcolor(characterColor);
+            fillcircle((int)position.x, (int)position.y, 15);
         }
     }
     
-    if (!useImageRendering) {
-        // 备用渲染方案：使用原来的圆形
-        setfillcolor(characterColor);
-        solidcircle((int)position.x, (int)position.y, (int)radius);
-        
-        // 绘制边框
-        setlinecolor(WHITE);
-        circle((int)position.x, (int)position.y, (int)radius);
-    }
-
-    // 绘制血条
+    // 生命值条始终显示
     DrawHealthBar();
 }
 
@@ -134,17 +174,39 @@ void Player::DrawHealthBar() {
     int barX = (int)(position.x - barWidth / 2);
     int barY = (int)(position.y - radius - 15);
 
+    // 阴影效果
+    setfillcolor(RGB(0, 0, 0));
+    solidrectangle(barX + 1, barY + 1, barX + barWidth + 1, barY + barHeight + 1);
+
     // 背景
-    setfillcolor(DARKGRAY);
+    setfillcolor(RGB(64, 64, 64));
     solidrectangle(barX, barY, barX + barWidth, barY + barHeight);
 
-    // 血量
+    // 血量 - 渐变效果
     int healthWidth = (barWidth * health) / maxHealth;
-    setfillcolor(RED);
-    solidrectangle(barX, barY, barX + healthWidth, barY + barHeight);
+    if (healthWidth > 0) {
+        // 根据血量调整颜色
+        COLORREF healthColor;
+        float healthPercent = (float)health / maxHealth;
+        if (healthPercent > 0.6f) {
+            healthColor = RGB(0, 200, 0); // 绿色
+        } else if (healthPercent > 0.3f) {
+            healthColor = RGB(255, 255, 0); // 黄色
+        } else {
+            healthColor = RGB(255, 0, 0); // 红色
+        }
+        
+        setfillcolor(healthColor);
+        solidrectangle(barX, barY, barX + healthWidth, barY + barHeight);
+        
+        // 高光效果
+        setfillcolor(RGB(255, 255, 255));
+        solidrectangle(barX, barY, barX + healthWidth, barY + 2);
+    }
     
     // 边框
     setlinecolor(WHITE);
+    setlinestyle(PS_SOLID, 1);
     rectangle(barX, barY, barX + barWidth, barY + barHeight);
 }
 

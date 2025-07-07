@@ -6,7 +6,7 @@
 #include <cmath>
 
 class MeleeAttack : public GameObject {
-private:
+protected:
     float lifetime;
     float maxLifetime;
     int damage;
@@ -17,10 +17,11 @@ private:
 public:
     MeleeAttack(Vector2 pos, Player* player, float attackAngle, float attackRange = 60.0f);
 
-    void Update(float deltaTime) override;
-    void Render() override;
+    virtual void Update(float deltaTime);
+    virtual void Render();
 
     bool IsInAttackRange(const Vector2& targetPos) const;
     int GetDamage() const { return damage; }
+    void SetDamage(int newDamage) { damage = newDamage; } // 添加SetDamage方法
     Player* GetOwner() const { return owner; }
 };

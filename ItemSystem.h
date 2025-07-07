@@ -7,7 +7,7 @@
 #include <memory>
 #include <random>
 
-// 道具效果结构
+// 锟斤拷锟斤拷效锟斤拷锟结构
 struct ItemEffect {
     ItemType type;
     float value;

@@ -53,8 +53,15 @@ void ImageManager::ReleaseAll() {
 
 void ImageManager::LoadCharacterImages() {
     // 加载所有角色图片
-    LoadImage("warrior", _T("img\\Knight3.png"));
-
+    LoadImage("warrior", _T("img\\Knight6.png"));
+    
+    // 加载战士斩击动画帧
+    LoadImage("cut1", _T("img\\cut1.png"));
+    LoadImage("cut2", _T("img\\cut2.png"));
+    LoadImage("cut3", _T("img\\cut3.png"));
+    
+    // 加载背景图片
+    LoadImage("background", _T("img\\background.png"));
 }
 
 void ImageManager::DrawImageWithTransparency(const std::string& key, int x, int y) {
@@ -64,26 +71,75 @@ void ImageManager::DrawImageWithTransparency(const std::string& key, int x, int 
     }
 }
 
+// 更可靠的透明绘制方法
 void ImageManager::DrawImageWithTransparency(IMAGE* img, int x, int y) {
     if (!img) return;
+    
+    // 方法：手动处理像素透明度
+    DWORD* pBuf = GetImageBuffer(img);
+    if (!pBuf) {
+        // 如果无法获取缓冲区，直接绘制
+        putimage(x, y, img);
+        return;
+    }
     
     int width = img->getwidth();
     int height = img->getheight();
     
-    // 方法1: 使用掩码绘制（适用于PNG透明背景）
-    // 创建掩码
-    IMAGE maskImg(width, height);
-    SetWorkingImage(&maskImg);
-    setbkcolor(WHITE);
-    cleardevice();
+    // 创建临时图像用于透明处理
+    IMAGE tempImg;
+    tempImg.Resize(width, height);
     
-    // 将原图绘制到掩码上，黑色部分变成白色，其他变成黑色
-    putimage(0, 0, img);
+    // 获取当前屏幕内容作为背景
+    getimage(&tempImg, x, y, width, height);
+    DWORD* tempBuf = GetImageBuffer(&tempImg);
     
-    // 恢复到主画布
-    SetWorkingImage(NULL);
-    
-    // 使用AND和OR操作实现透明效果
-    putimage(x, y, &maskImg, SRCAND);
-    putimage(x, y, img, SRCPAINT);
+    if (tempBuf) {
+        // 逐像素处理透明度
+        for (int i = 0; i < width * height; i++) {
+            DWORD srcPixel = pBuf[i];
+            
+            // 检查是否为黑色或深色（当作透明）
+            int r = GetRValue(srcPixel);
+            int g = GetGValue(srcPixel);
+            int b = GetBValue(srcPixel);
+            
+            // 如果不是黑色/深色，则使用原像素；否则保持背景
+            if (r > 20 || g > 20 || b > 20) {
+                tempBuf[i] = srcPixel;
+            }
+            // 黑色像素保持不变（使用背景）
+        }
+        
+        // 绘制处理后的图像
+        putimage(x, y, &tempImg);
+    } else {
+        // 备用方案
+        putimage(x, y, img);
+    }
+}
+
+void ImageManager::DrawBackground() {
+    IMAGE* bgImg = GetImage("background");
+    if (bgImg) {
+        putimage(0, 0, bgImg);
+    }
+}
+
+void ImageManager::DrawScaledBackground(int windowWidth, int windowHeight) {
+    IMAGE* bgImg = GetImage("background");
+    if (bgImg) {
+        int imgWidth = bgImg->getwidth();
+        int imgHeight = bgImg->getheight();
+        
+        if (imgWidth != windowWidth || imgHeight != windowHeight) {
+            for (int x = 0; x < windowWidth; x += imgWidth) {
+                for (int y = 0; y < windowHeight; y += imgHeight) {
+                    putimage(x, y, bgImg);
+                }
+            }
+        } else {
+            putimage(0, 0, bgImg);
+        }
+    }
 }

@@ -5,26 +5,25 @@
 #include <graphics.h>
 #include <windows.h>
 #include <algorithm>
-#include <string>  // 添加这个头文件
+#include <string>
 
 class Player : public GameObject {
 private:
+    CharacterType characterType;
+    std::string characterImageKey;
+    bool useImageRendering;
+    COLORREF characterColor;
+    
     float speed;
     int level;
     int experience;
     int experienceToNext;
     float attackCooldown;
     float attackTimer;
-
-    // 角色系统
-    CharacterType characterType;
-    COLORREF characterColor;
-
-    // 图片渲染相关 - 新增
-    bool useImageRendering;
-    std::string characterImageKey;
-
-    void LoadCharacterImage();  // 新增
+    
+    // 斩击动画相关
+    float slashAnimationTimer;
+    float slashAnimationDuration;
 
 public:
     Player(Vector2 pos, CharacterType type = CharacterType::WARRIOR);
@@ -39,6 +38,11 @@ public:
     void GainExperience(int exp);
     void LevelUp();
 
+    // 添加触发斩击动画的方法
+    void TriggerSlashAnimation() {
+        slashAnimationTimer = slashAnimationDuration;
+    }
+
     // Getters
     int GetLevel() const { return level; }
     int GetExperience() const { return experience; }
@@ -48,4 +52,7 @@ public:
     // 角色系统
     void SetCharacterType(CharacterType type);
     void ApplyCharacterStats(const CharacterData& data);
+    
+    // 添加缺失的方法声明
+    void LoadCharacterImage();
 };

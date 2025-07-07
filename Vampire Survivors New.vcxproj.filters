@@ -75,6 +75,9 @@
     <ClCompile Include="ImageManager.cpp">
       <Filter>Img</Filter>
     </ClCompile>
+    <ClCompile Include="StartScreen.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Vector2.h">
@@ -133,6 +136,9 @@
     </ClInclude>
     <ClInclude Include="ImageManager.h">
       <Filter>Img</Filter>
+    </ClInclude>
+    <ClInclude Include="StartScreen.h">
+      <Filter>Game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

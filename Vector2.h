@@ -1,7 +1,7 @@
 #pragma once
 #include <cmath>
 
-// »ù´¡ÏòÁ¿Àà
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 struct Vector2 {
     float x, y;
 
@@ -19,13 +19,22 @@ struct Vector2 {
         return Vector2(x * scalar, y * scalar);
     }
 
-    float Length() const {
-        return sqrt(x * x + y * y);
+    void Normalize() {
+        float len = Length();
+        if (len > 0) {
+            x /= len;
+            y /= len;
+        }
     }
 
     Vector2 Normalized() const {
-        float len = Length();
-        return len > 0 ? Vector2(x / len, y / len) : Vector2(0, 0);
+        Vector2 result = *this;
+        result.Normalize();
+        return result;
+    }
+
+    float Length() const {
+        return sqrt(x * x + y * y);
     }
 
     float Distance(const Vector2& other) const {

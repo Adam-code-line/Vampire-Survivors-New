@@ -139,6 +139,7 @@
     <ClCompile Include="MeleeAttack.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SkillSystem.cpp" />
+    <ClCompile Include="StartScreen.cpp" />
     <ClCompile Include="SurvivorGame.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="WeaponSystem.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="MeleeAttack.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="SkillSystem.h" />
+    <ClInclude Include="StartScreen.h" />
     <ClInclude Include="SurvivorGame.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="WeaponSystem.h" />

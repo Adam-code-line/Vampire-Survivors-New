@@ -51,19 +51,26 @@ float SkillSystem::GetSkillCooldownPercent() const {
 }
 
 void SkillSystem::ExecuteBerserkerRage() {
-    // Õ½Ê¿¼¼ÄÜ£º360¶È½üÕ½¹¥»÷
-    for (int i = 0; i < 12; i++) {
-        float angle = (2 * PI * i) / 12;
-        meleeAttacks->push_back(std::make_unique<MeleeAttack>(
-            player->position, player, angle, 100.0f));
+    // æˆ˜å£«æŠ€èƒ½ï¼šç‹‚æš´æ–©å‡» - èŒƒå›´éšç­‰çº§å¢å¤§
+    float rageRange = 120.0f + player->GetLevel() * 20.0f; // ç­‰çº§è¶Šé«˜èŒƒå›´è¶Šå¤§
+    int rageDamage = 50 + player->GetLevel() * 10; // ç­‰çº§è¶Šé«˜ä¼¤å®³è¶Šé«˜
+    
+    // åˆ›å»º8ä¸ªæ–¹å‘çš„å¼ºåŒ–æ–©å‡»
+    for (int i = 0; i < 8; i++) {
+        float angle = (PI * 2 * i) / 8;
+        
+        // åˆ›å»ºæŠ€èƒ½æ–©å‡»
+        auto skillSlash = std::make_unique<MeleeAttack>(player->position, player, angle, rageRange);
+        skillSlash->SetDamage(rageDamage);
+        meleeAttacks->push_back(std::move(skillSlash));
     }
 }
 
 void SkillSystem::ExecuteFireball() {
-    // ·¨Ê¦¼¼ÄÜ£º·¢Éä¶à¸ö»ğÇò
+    // æ³•å¸ˆæŠ€èƒ½ï¼šå‘å°„ç«çƒ
     if (enemies->empty()) return;
 
-    // ÕÒµ½×î½üµÄµĞÈË
+    // æ‰¾åˆ°æœ€è¿‘çš„æ•Œäºº
     Enemy* target = nullptr;
     float minDist = FLT_MAX;
     for (auto& enemy : *enemies) {
@@ -78,7 +85,7 @@ void SkillSystem::ExecuteFireball() {
 
     if (target) {
         Vector2 direction = (target->position - player->position).Normalized();
-        // ·¢Éä3¸ö»ğÇò£¬ÉÔÎ¢·ÖÉ¢
+        // å‘å°„3ä¸ªç«çƒï¼Œç¨å¾®åˆ†æ•£
         for (int i = -1; i <= 1; i++) {
             float angle = atan2(direction.y, direction.x) + i * 0.3f;
             Vector2 fireballDir(cos(angle), sin(angle));
@@ -88,7 +95,7 @@ void SkillSystem::ExecuteFireball() {
 }
 
 void SkillSystem::ExecuteMultiShot() {
-    // ¹­¼ıÊÖ¼¼ÄÜ£ºÏò8¸ö·½ÏòÉä»÷
+    // å¼“ç®­æ‰‹æŠ€èƒ½ï¼šå‘8ä¸ªæ–¹å‘å°„ç®­
     for (int i = 0; i < 8; i++) {
         float angle = (2 * PI * i) / 8;
         Vector2 direction(cos(angle), sin(angle));
@@ -97,16 +104,16 @@ void SkillSystem::ExecuteMultiShot() {
 }
 
 void SkillSystem::ExecuteShadowStrike() {
-    // ´Ì¿Í¼¼ÄÜ£ºË²ÒÆµ½µĞÈËÉí±ß²¢¹¥»÷
+    // åˆºå®¢æŠ€èƒ½ï¼šç¬ç§»åˆ°æœ€è¿‘æ•Œäººå¹¶æ”»å‡»
     if (enemies->empty()) return;
 
-    // ÕÒµ½×î½üµÄµĞÈË
+    // æ‰¾åˆ°æœ€è¿‘çš„æ•Œäºº
     Enemy* target = nullptr;
     float minDist = FLT_MAX;
     for (auto& enemy : *enemies) {
         if (enemy->active) {
             float dist = player->position.Distance(enemy->position);
-            if (dist < minDist && dist < 200.0f) { // ÏŞÖÆË²ÒÆ¾àÀë
+            if (dist < minDist && dist < 200.0f) { // é™åˆ¶ç¬ç§»è·ç¦»
                 minDist = dist;
                 target = enemy.get();
             }
@@ -114,13 +121,15 @@ void SkillSystem::ExecuteShadowStrike() {
     }
 
     if (target) {
-        // Ë²ÒÆµ½µĞÈË¸½½ü
+        // ç¬ç§»åˆ°æ•Œäººé™„è¿‘
         Vector2 direction = (player->position - target->position).Normalized();
         player->position = target->position + direction * 40.0f;
 
-        // Á¢¼´½øĞĞ½üÕ½¹¥»÷
+        // å¯¹å‘¨å›´æ‰€æœ‰æ•Œäººæ”»å‡»
         float angle = atan2(-direction.y, -direction.x);
-        meleeAttacks->push_back(std::make_unique<MeleeAttack>(
-            player->position, player, angle, 80.0f));
+        int shadowDamage = 80 + player->GetLevel() * 15; // åˆºå®¢æŠ€èƒ½ä¼¤å®³
+        auto shadowStrike = std::make_unique<MeleeAttack>(player->position, player, angle, 80.0f);
+        shadowStrike->SetDamage(shadowDamage);
+        meleeAttacks->push_back(std::move(shadowStrike));
     }
 }

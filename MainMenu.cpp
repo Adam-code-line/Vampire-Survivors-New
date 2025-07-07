@@ -1,8 +1,10 @@
 #include "MainMenu.h"
 #include <conio.h>
+#include <iterator>
 
-MainMenu::MainMenu() : selectedCharacter(0), menuActive(true) {
+MainMenu::MainMenu() : selectedCharacter(0), menuActive(true), mousePos(0, 0) {
     InitializeCharacters();
+    InitializeCharacterCards();
 }
 
 void MainMenu::InitializeCharacters() {
@@ -41,6 +43,23 @@ void MainMenu::InitializeCharacters() {
     );
 }
 
+void MainMenu::InitializeCharacterCards() {
+    characterCards.clear();
+    
+    int cardWidth = 250;
+    int cardHeight = 350;
+    int spacing = 20;
+    int totalWidth = (int)characters.size() * cardWidth + ((int)characters.size() - 1) * spacing;
+    int startX = (WINDOW_WIDTH - totalWidth) / 2;
+    int startY = 180;
+
+    for (size_t i = 0; i < characters.size(); i++) {
+        int x = startX + (int)i * (cardWidth + spacing);
+        int y = startY;
+        characterCards.emplace_back(x, y, cardWidth, cardHeight);
+    }
+}
+
 CharacterType MainMenu::ShowMenu() {
     initgraph(WINDOW_WIDTH, WINDOW_HEIGHT);
     setbkcolor(RGB(20, 20, 40));
@@ -49,37 +68,44 @@ CharacterType MainMenu::ShowMenu() {
     BeginBatchDraw();
     
     bool needsRedraw = true;
-    int lastSelectedCharacter = -1;
     DWORD lastTime = GetTickCount();
     
     while (menuActive) {
         DWORD currentTime = GetTickCount();
         
+        // 更新鼠标悬停状态
+        UpdateMouseHover();
+        
         // 处理输入
         int input = HandleInput();
         
-        if (input == 1) { // Enter pressed
+        if (input == 1) { // Enter pressed 或鼠标点击
             menuActive = false;
             break;
         }
         else if (input == 2) { // Left arrow
-            selectedCharacter = (selectedCharacter - 1 + characters.size()) % characters.size();
+            selectedCharacter = (selectedCharacter - 1 + (int)characters.size()) % (int)characters.size();
             needsRedraw = true;
         }
         else if (input == 3) { // Right arrow
-            selectedCharacter = (selectedCharacter + 1) % characters.size();
+            selectedCharacter = (selectedCharacter + 1) % (int)characters.size();
             needsRedraw = true;
         }
+        else if (input == 4) { // ESC 退出
+            menuActive = false;
+            // 返回默认角色或处理退出逻辑
+            break;
+        }
         
-        // 检查是否需要重绘（选择改变或超过刷新间隔）
-        if (needsRedraw || (currentTime - lastTime >= 16)) { // 约60FPS
+        // 检查是否需要重绘
+        if (needsRedraw || (currentTime - lastTime >= 50)) { // 约20FPS
             RenderMenu();
-            FlushBatchDraw(); // 刷新到屏幕
+            FlushBatchDraw();
             needsRedraw = false;
             lastTime = currentTime;
         }
         
-        Sleep(1); // 避免100%CPU占用
+        Sleep(10);
     }
     
     // 结束双缓冲绘制
@@ -88,56 +114,110 @@ CharacterType MainMenu::ShowMenu() {
     return characters[selectedCharacter].type;
 }
 
+void MainMenu::UpdateMouseHover() {
+    POINT cursorPos;
+    GetCursorPos(&cursorPos);
+    ScreenToClient(GetHWnd(), &cursorPos);
+    
+    mousePos = Vector2((float)cursorPos.x, (float)cursorPos.y);
+    
+    // 更新每个角色卡片的悬停状态
+    for (size_t i = 0; i < characterCards.size(); i++) {
+        characterCards[i].isHovered = characterCards[i].Contains(mousePos.x, mousePos.y);
+        
+        // 如果鼠标悬停在某个卡片上，更新选中的角色
+        if (characterCards[i].isHovered) {
+            selectedCharacter = (int)i;
+        }
+    }
+}
+
 void MainMenu::RenderMenu() {
     cleardevice();
 
-    // 标题
-    settextcolor(WHITE);
-    settextstyle(48, 0, _T("Arial"));
-    outtextxy(WINDOW_WIDTH / 2 - 200, 50, _T("VAMPIRE SURVIVORS"));
+    // 绘制背景渐变
+    for (int y = 0; y < WINDOW_HEIGHT; y++) {
+        float ratio = (float)y / WINDOW_HEIGHT;
+        int r = (int)(20 + ratio * 20);
+        int g = (int)(20 + ratio * 30);
+        int b = (int)(40 + ratio * 40);
+        
+        setlinecolor(RGB(r, g, b));
+        line(0, y, WINDOW_WIDTH, y);
+    }
 
+    // 标题阴影
+    settextcolor(RGB(50, 50, 50));
+    settextstyle(48, 0, _T("Arial"));
+    int titleWidth = textwidth(_T("VAMPIRE SURVIVORS"));
+    outtextxy((WINDOW_WIDTH - titleWidth) / 2 + 3, 53, _T("VAMPIRE SURVIVORS"));
+
+    // 标题
+    settextcolor(RGB(255, 215, 0));
+    settextstyle(48, 0, _T("Arial"));
+    outtextxy((WINDOW_WIDTH - titleWidth) / 2, 50, _T("VAMPIRE SURVIVORS"));
+
+    // 副标题
+    settextcolor(RGB(200, 200, 200));
     settextstyle(24, 0, _T("Arial"));
-    outtextxy(WINDOW_WIDTH / 2 - 100, 120, _T("Select Your Character"));
+    int subtitleWidth = textwidth(_T("Select Your Character"));
+    outtextxy((WINDOW_WIDTH - subtitleWidth) / 2, 120, _T("Select Your Character"));
 
     RenderCharacterSelection();
 
     // 控制说明
-    settextcolor(YELLOW);
+    settextcolor(RGB(255, 255, 100));
     settextstyle(16, 0, _T("Arial"));
-    outtextxy(WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 60, _T("Use LEFT/RIGHT arrows to select"));
-    outtextxy(WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT - 40, _T("Press ENTER to confirm"));
+    outtextxy(50, WINDOW_HEIGHT - 80, _T("Use LEFT/RIGHT arrows or MOUSE to select"));
+    outtextxy(50, WINDOW_HEIGHT - 60, _T("Press ENTER or CLICK to confirm"));
+    outtextxy(50, WINDOW_HEIGHT - 40, _T("Press ESC to exit"));
 }
 
 void MainMenu::RenderCharacterSelection() {
-    int cardWidth = 250;
-    int cardHeight = 350;
-    int spacing = 20;
-    int totalWidth = characters.size() * cardWidth + (characters.size() - 1) * spacing;
-    int startX = (WINDOW_WIDTH - totalWidth) / 2;
-    int startY = 180;
-
     for (size_t i = 0; i < characters.size(); i++) {
-        int x = startX + i * (cardWidth + spacing);
-        int y = startY;
+        const CharacterCard& card = characterCards[i];
+        int x = card.x;
+        int y = card.y;
 
-        // 选中框 - 使用更明显的高亮效果
-        if (i == selectedCharacter) {
-            setlinecolor(YELLOW);
-            setlinestyle(PS_SOLID, 4); // 更粗的边框
-            rectangle(x - 8, y - 8, x + cardWidth + 8, y + cardHeight + 8);
+        // 选中或悬停效果
+        if ((int)i == selectedCharacter) {
+            // 外层发光效果
+            setlinecolor(RGB(255, 255, 0));
+            setlinestyle(PS_SOLID, 6);
+            rectangle(x - 10, y - 10, x + card.width + 10, y + card.height + 10);
             
-            // 添加发光效果
+            // 中层发光
             setlinecolor(RGB(255, 255, 100));
+            setlinestyle(PS_SOLID, 4);
+            rectangle(x - 6, y - 6, x + card.width + 6, y + card.height + 6);
+            
+            // 内层发光
+            setlinecolor(RGB(255, 255, 200));
             setlinestyle(PS_SOLID, 2);
-            rectangle(x - 6, y - 6, x + cardWidth + 6, y + cardHeight + 6);
+            rectangle(x - 3, y - 3, x + card.width + 3, y + card.height + 3);
+        }
+        else if (card.isHovered) {
+            // 悬停效果（较弱的高亮）
+            setlinecolor(RGB(150, 150, 255));
+            setlinestyle(PS_SOLID, 3);
+            rectangle(x - 5, y - 5, x + card.width + 5, y + card.height + 5);
         }
 
         // 角色卡片背景
-        COLORREF cardColor = (i == selectedCharacter) ? RGB(80, 80, 100) : RGB(60, 60, 80);
+        COLORREF cardColor;
+        if ((int)i == selectedCharacter) {
+            cardColor = RGB(100, 100, 140);
+        } else if (card.isHovered) {
+            cardColor = RGB(80, 80, 120);
+        } else {
+            cardColor = RGB(60, 60, 80);
+        }
+        
         setfillcolor(cardColor);
-        setlinecolor(WHITE);
+        setlinecolor(RGB(150, 150, 150));
         setlinestyle(PS_SOLID, 1);
-        fillrectangle(x, y, x + cardWidth, y + cardHeight);
+        fillrectangle(x, y, x + card.width, y + card.height);
+        rectangle(x, y, x + card.width, y + card.height);
 
         RenderCharacterInfo(characters[i], x, y);
     }
@@ -151,28 +231,57 @@ void MainMenu::RenderCharacterInfo(const CharacterData& character, int x, int y)
     // 转换string到TCHAR
     TCHAR nameText[50];
     MultiByteToWideChar(CP_ACP, 0, character.name.c_str(), -1, nameText, 50);
-    outtextxy(x + 10, y + 10, nameText);
+    
+    // 居中显示角色名称
+    int nameWidth = textwidth(nameText);
+    outtextxy(x + (250 - nameWidth) / 2, y + 10, nameText);
 
     // 角色图标 (用颜色区分)
     COLORREF characterColor;
+    TCHAR iconChar;
     switch (character.type) {
-    case CharacterType::WARRIOR: characterColor = RED; break;
-    case CharacterType::MAGE: characterColor = BLUE; break;
-    case CharacterType::ARCHER: characterColor = GREEN; break;
-    case CharacterType::ASSASSIN: characterColor = RGB(128, 0, 128); break;
+    case CharacterType::WARRIOR: 
+        characterColor = RGB(220, 50, 50); 
+        iconChar = _T('W');
+        break;
+    case CharacterType::MAGE: 
+        characterColor = RGB(50, 50, 220); 
+        iconChar = _T('M');
+        break;
+    case CharacterType::ARCHER: 
+        characterColor = RGB(50, 220, 50); 
+        iconChar = _T('A');
+        break;
+    case CharacterType::ASSASSIN: 
+        characterColor = RGB(150, 50, 150); 
+        iconChar = _T('S');
+        break;
+    default:
+        characterColor = WHITE;
+        iconChar = _T('?');
+        break;
     }
 
+    // 角色图标背景
     setfillcolor(characterColor);
     solidcircle(x + 125, y + 80, 40);
     
-    // 添加角色图标边框
+    // 角色图标边框
     setlinecolor(WHITE);
-    setlinestyle(PS_SOLID, 2);
+    setlinestyle(PS_SOLID, 3);
     circle(x + 125, y + 80, 40);
+    
+    // 角色图标字母
+    settextcolor(WHITE);
+    settextstyle(30, 0, _T("Arial"));
+    TCHAR iconStr[2] = { iconChar, _T('\0') };
+    int iconWidth = textwidth(iconStr);
+    int iconHeight = textheight(iconStr);
+    outtextxy(x + 125 - iconWidth/2, y + 80 - iconHeight/2, iconStr);
 
     // 属性信息
-    settextcolor(WHITE);
-    settextstyle(16, 0, _T("Arial"));
+    settextcolor(RGB(200, 200, 200));
+    settextstyle(14, 0, _T("Arial"));
 
     TCHAR statText[100];
     _stprintf_s(statText, _T("Speed: %.0f"), character.speed);
@@ -188,7 +297,7 @@ void MainMenu::RenderCharacterInfo(const CharacterData& character, int x, int y)
     outtextxy(x + 10, y + 200, statText);
 
     // 技能信息
-    settextcolor(YELLOW);
+    settextcolor(RGB(255, 215, 0));
     settextstyle(14, 0, _T("Arial"));
 
     std::string skillName;
@@ -197,6 +306,7 @@ void MainMenu::RenderCharacterInfo(const CharacterData& character, int x, int y)
     case SkillType::FIREBALL: skillName = "Fireball"; break;
     case SkillType::MULTI_SHOT: skillName = "Multi-Shot"; break;
     case SkillType::SHADOW_STRIKE: skillName = "Shadow Strike"; break;
+    default: skillName = "Unknown"; break;
     }
 
     TCHAR skillText[50];
@@ -206,14 +316,48 @@ void MainMenu::RenderCharacterInfo(const CharacterData& character, int x, int y)
 
     _stprintf_s(statText, _T("Cooldown: %.1fs"), character.skillCooldown);
     outtextxy(x + 10, y + 270, statText);
+
+    // 修复：使用简单的索引比较而不是std::distance
+    size_t characterIndex = 0;
+    for (size_t j = 0; j < characters.size(); j++) {
+        if (&characters[j] == &character) {
+            characterIndex = j;
+            break;
+        }
+    }
+    
+    if (selectedCharacter == (int)characterIndex) {
+        settextcolor(RGB(150, 150, 255));
+        settextstyle(12, 0, _T("Arial"));
+        outtextxy(x + 10, y + 295, _T("Click to select"));
+    }
 }
 
 int MainMenu::HandleInput() {
+    // 处理鼠标点击
+    static bool mousePressed = false;
+    if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+        if (!mousePressed) {
+            mousePressed = true;
+            
+            // 检查是否点击了某个角色卡片
+            for (size_t i = 0; i < characterCards.size(); i++) {
+                if (characterCards[i].Contains(mousePos.x, mousePos.y)) {
+                    selectedCharacter = (int)i;
+                    return 1; // 模拟按下Enter，直接确认选择
+                }
+            }
+        }
+    } else {
+        mousePressed = false;
+    }
+
+    // 处理键盘输入
     if (_kbhit()) {
         int ch = _getch();
         switch (ch) {
         case 13: return 1; // Enter
-        case 27: return 4; // ESC (可选：退出游戏)
+        case 27: return 4; // ESC
         case 224: // Arrow keys
             ch = _getch();
             switch (ch) {
