@@ -25,6 +25,9 @@ public:
     void DrawImageWithTransparency(const std::string& key, int x, int y);
     void DrawImageWithTransparency(IMAGE* img, int x, int y);
     
+    // 新增：水平翻转绘制函数
+    void DrawImageFlippedHorizontal(IMAGE* img, int x, int y);
+    
     // 背景绘制函数
     void DrawBackground();
     void DrawScaledBackground(int windowWidth, int windowHeight);

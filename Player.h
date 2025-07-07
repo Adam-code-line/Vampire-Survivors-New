@@ -24,6 +24,10 @@ private:
     // 斩击动画相关
     float slashAnimationTimer;
     float slashAnimationDuration;
+    
+    // 添加方向状态
+    bool facingRight;
+    Vector2 lastMoveDirection;
 
 public:
     Player(Vector2 pos, CharacterType type = CharacterType::WARRIOR);
@@ -48,6 +52,7 @@ public:
     int GetExperience() const { return experience; }
     int GetExperienceToNext() const { return experienceToNext; }
     CharacterType GetCharacterType() const { return characterType; }
+    bool IsFacingRight() const { return facingRight; }
 
     // 角色系统
     void SetCharacterType(CharacterType type);

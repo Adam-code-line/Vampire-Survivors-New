@@ -52,16 +52,28 @@ void ImageManager::ReleaseAll() {
 }
 
 void ImageManager::LoadCharacterImages() {
-    // 加载所有角色图片
+    // 加载战士图片（向右和向左）
     LoadImage("warrior", _T("img\\Knight6.png"));
+    LoadImage("warrior_right", _T("img\\Knight6_right.png"));
     
-    // 加载战士斩击动画帧
+    // 加载战士斩击动画帧（向右和向左）
     LoadImage("cut1", _T("img\\cut1.png"));
     LoadImage("cut2", _T("img\\cut2.png"));
     LoadImage("cut3", _T("img\\cut3.png"));
+    LoadImage("cut1_right", _T("img\\cut1_right.png"));
+    LoadImage("cut2_right", _T("img\\cut2_right.png"));
+    LoadImage("cut3_right", _T("img\\cut3_right.png"));
     
     // 加载背景图片
     LoadImage("background", _T("img\\background.png"));
+    
+    // 可以在这里加载其他角色的图片
+    // LoadImage("mage", _T("img\\Mage.png"));
+    // LoadImage("mage_right", _T("img\\Mage_right.png"));
+    // LoadImage("archer", _T("img\\Archer.png"));
+    // LoadImage("archer_right", _T("img\\Archer_right.png"));
+    // LoadImage("assassin", _T("img\\Assassin.png"));
+    // LoadImage("assassin_right", _T("img\\Assassin_right.png"));
 }
 
 void ImageManager::DrawImageWithTransparency(const std::string& key, int x, int y) {
@@ -116,6 +128,37 @@ void ImageManager::DrawImageWithTransparency(IMAGE* img, int x, int y) {
     } else {
         // 备用方案
         putimage(x, y, img);
+    }
+}
+
+void ImageManager::DrawImageFlippedHorizontal(IMAGE* img, int x, int y) {
+    if (!img) return;
+    
+    int width = img->getwidth();
+    int height = img->getheight();
+    
+    // 创建翻转后的临时图像
+    IMAGE flippedImg;
+    flippedImg.Resize(width, height);
+    
+    DWORD* srcBuf = GetImageBuffer(img);
+    DWORD* dstBuf = GetImageBuffer(&flippedImg);
+    
+    if (srcBuf && dstBuf) {
+        // 水平翻转像素
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                int srcIndex = row * width + col;
+                int dstIndex = row * width + (width - 1 - col);
+                dstBuf[dstIndex] = srcBuf[srcIndex];
+            }
+        }
+        
+        // 绘制翻转后的图像
+        DrawImageWithTransparency(&flippedImg, x, y);
+    } else {
+        // 备用方案：直接绘制原图
+        DrawImageWithTransparency(img, x, y);
     }
 }
 

@@ -3,7 +3,8 @@
 
 Player::Player(Vector2 pos, CharacterType type) 
     : GameObject(pos, 15.0f), characterType(type),  // 添加radius参数
-      slashAnimationTimer(0), slashAnimationDuration(0.3f) {
+      slashAnimationTimer(0), slashAnimationDuration(0.3f),
+      facingRight(true), lastMoveDirection(0, 0) {  // 初始化朝向变量
     speed = 150.0f;
     level = 1;
     experience = 0;
@@ -101,6 +102,13 @@ void Player::HandleInput(float deltaTime) {
     if (moveDir.Length() > 0) {
         moveDir = moveDir.Normalized();
         position = position + moveDir * speed * deltaTime;
+        
+        // 更新朝向：只有在水平移动时才改变朝向
+        if (moveDir.x != 0) {
+            facingRight = moveDir.x > 0;
+        }
+        
+        lastMoveDirection = moveDir;
     }
 }
 
@@ -115,10 +123,20 @@ void Player::Render() {
         frameIndex = min(frameIndex, 2); // 确保不超过最大帧数
         
         std::string frameName;
-        switch (frameIndex) {
-            case 0: frameName = "cut1"; break;
-            case 1: frameName = "cut2"; break;
-            default: frameName = "cut3"; break;
+        if (facingRight) {
+            // 面向右边使用 _right 图片
+            switch (frameIndex) {
+                case 0: frameName = "cut1_right"; break;
+                case 1: frameName = "cut2_right"; break;
+                default: frameName = "cut3_right"; break;
+            }
+        } else {
+            // 面向左边使用普通图片
+            switch (frameIndex) {
+                case 0: frameName = "cut1"; break;
+                case 1: frameName = "cut2"; break;
+                default: frameName = "cut3"; break;
+            }
         }
         
         // 绘制斩击动画帧 - 以玩家位置为中心
@@ -136,7 +154,17 @@ void Player::Render() {
         // 斩击动画期间不绘制角色模型
     } else {
         // 正常状态 - 显示角色模型
-        IMAGE* characterImg = imgManager->GetImage(characterImageKey);
+        std::string imageKey;
+        if (facingRight) {
+            // 面向右边使用 _right 图片
+            imageKey = characterImageKey + "_right";
+        } else {
+            // 面向左边使用普通图片
+            imageKey = characterImageKey;
+        }
+        
+        IMAGE* characterImg = imgManager->GetImage(imageKey);
+        
         if (characterImg) {
             int drawX = (int)position.x - characterImg->getwidth() / 2;
             int drawY = (int)position.y - characterImg->getheight() / 2;

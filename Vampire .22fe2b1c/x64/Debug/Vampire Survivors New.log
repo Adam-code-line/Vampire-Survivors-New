@@ -1,12 +1,9 @@
-﻿  EnhancedWeaponSystem.cpp
-D:\code\vsstucode\Vampire Survivors New\EnhancedWeaponSystem.cpp(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+﻿  Player.cpp
+D:\code\vsstucode\Vampire Survivors New\Player.cpp(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
 D:\code\vsstucode\Vampire Survivors New\Player.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-  (编译源文件“EnhancedWeaponSystem.cpp”)
-  
-D:\code\vsstucode\Vampire Survivors New\Enemy.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-  (编译源文件“EnhancedWeaponSystem.cpp”)
+  (编译源文件“Player.cpp”)
   
 D:\code\vsstucode\Vampire Survivors New\ImageManager.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-  (编译源文件“EnhancedWeaponSystem.cpp”)
+  (编译源文件“Player.cpp”)
   
   Vampire Survivors New.vcxproj -> D:\code\vsstucode\Vampire Survivors New\x64\Debug\Vampire Survivors New.exe
