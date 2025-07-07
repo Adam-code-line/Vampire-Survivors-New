@@ -38,50 +38,15 @@ void SlashAttack::Render() {
         return;
     }
     
-    // 战士使用图片动画
-    ImageManager* imgManager = ImageManager::GetInstance();
-    std::string frameKey = "cut" + std::to_string(currentFrame + 1);
-    IMAGE* slashImg = imgManager->GetImage(frameKey);
+    // 战士的斩击动画完全由Player类处理，这里不再绘制任何视觉效果
+    // 只保留伤害判定功能，不进行任何渲染
     
-    if (slashImg) {
-        int imgWidth = slashImg->getwidth();
-        int imgHeight = slashImg->getheight();
-        
-        // 根据等级调整大小
-        float scaleRatio = 1.0f + (owner->GetLevel() - 1) * 0.2f; // 每级增加20%大小
-        int scaledWidth = (int)(imgWidth * scaleRatio);
-        int scaledHeight = (int)(imgHeight * scaleRatio);
-        
-        // 计算绘制位置
-        int drawX = (int)position.x - scaledWidth / 2;
-        int drawY = (int)position.y - scaledHeight / 2;
-        
-        // 根据攻击角度旋转图片位置
-        float cosAngle = cos(angle);
-        float sinAngle = sin(angle);
-        
-        drawX += (int)(cosAngle * 20); // 向攻击方向偏移
-        drawY += (int)(sinAngle * 20);
-        
-        if (abs(scaleRatio - 1.0f) > 0.01f) {
-            // 缩放绘制
-            IMAGE scaledImg;
-            scaledImg.Resize(scaledWidth, scaledHeight);
-            
-            SetWorkingImage(&scaledImg);
-            // 修复 putimage 函数调用
-            putimage(0, 0, slashImg);
-            SetWorkingImage();
-            
-            imgManager->DrawImageWithTransparency(&scaledImg, drawX, drawY);
-        } else {
-            // 原始大小绘制
-            imgManager->DrawImageWithTransparency(slashImg, drawX, drawY);
-        }
-    } else {
-        // 图片加载失败时的备用渲染
-        MeleeAttack::Render();
-    }
+    // 可选：绘制一个很小的攻击范围指示器用于调试（注释掉以避免重复渲染）
+    /*
+    setlinecolor(RGB(255, 0, 0));
+    setlinestyle(PS_DOT, 1);
+    circle((int)position.x, (int)position.y, (int)range);
+    */
 }
 
 // EnhancedWeaponSystem implementation
@@ -117,6 +82,9 @@ void EnhancedWeaponSystem::HandleWarriorSlash(const std::vector<std::unique_ptr<
             
             // 斩击范围随等级增加
             float slashRange = 80.0f + player->GetLevel() * 10.0f;
+            
+            // 触发玩家的斩击动画
+            player->TriggerSlashAnimation();
             
             meleeAttacks->push_back(std::make_unique<SlashAttack>(
                 player->position, player, angle, slashRange, true));

@@ -108,10 +108,11 @@ void Player::Render() {
     ImageManager* imgManager = ImageManager::GetInstance();
     
     // 检查是否在播放斩击动画
-    if (slashAnimationTimer > 0) {
-        // 斩击动画期间 - 只显示斩击动画，不显示角色模型
+    if (slashAnimationTimer > 0 && characterType == CharacterType::WARRIOR) {
+        // 战士斩击动画期间 - 不显示角色模型，只显示斩击动画
         float animationProgress = (slashAnimationDuration - slashAnimationTimer) / slashAnimationDuration;
         int frameIndex = (int)(animationProgress * 3); // 3帧动画
+        frameIndex = min(frameIndex, 2); // 确保不超过最大帧数
         
         std::string frameName;
         switch (frameIndex) {
@@ -120,7 +121,7 @@ void Player::Render() {
             default: frameName = "cut3"; break;
         }
         
-        // 绘制斩击动画帧
+        // 绘制斩击动画帧 - 以玩家位置为中心
         IMAGE* slashImg = imgManager->GetImage(frameName);
         if (slashImg) {
             int drawX = (int)position.x - slashImg->getwidth() / 2;
@@ -128,31 +129,14 @@ void Player::Render() {
             imgManager->DrawImageWithTransparency(slashImg, drawX, drawY);
         } else {
             // 如果斩击图片加载失败，显示一个特殊效果
-            setfillcolor(RGB(255, 255, 0)); // 黄色闪光效果
-            fillcircle((int)position.x, (int)position.y, 20);
-        }
-    } else {
-        // 正常状态 - 显示角色模型
-        std::string characterKey;
-        switch (characterType) {
-            case CharacterType::WARRIOR:
-                characterKey = "warrior";
-                break;
-            case CharacterType::MAGE:
-                characterKey = "mage";
-                break;
-            case CharacterType::ARCHER:
-                characterKey = "archer";
-                break;
-            case CharacterType::ASSASSIN:
-                characterKey = "assassin";
-                break;
-            default:
-                characterKey = "warrior";
-                break;
+            setfillcolor(RGB(255, 255, 100)); // 黄色闪光效果
+            fillcircle((int)position.x, (int)position.y, 25);
         }
         
-        IMAGE* characterImg = imgManager->GetImage(characterKey);
+        // 斩击动画期间不绘制角色模型
+    } else {
+        // 正常状态 - 显示角色模型
+        IMAGE* characterImg = imgManager->GetImage(characterImageKey);
         if (characterImg) {
             int drawX = (int)position.x - characterImg->getwidth() / 2;
             int drawY = (int)position.y - characterImg->getheight() / 2;
