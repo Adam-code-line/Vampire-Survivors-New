@@ -2,9 +2,12 @@
 #include "ImageManager.h"
 
 Player::Player(Vector2 pos, CharacterType type) 
-    : GameObject(pos, 15.0f), characterType(type),  // 添加radius参数
+    : GameObject(pos, 15.0f), characterType(type),
       slashAnimationTimer(0), slashAnimationDuration(0.3f),
-      facingRight(true), lastMoveDirection(0, 0) {  // 初始化朝向变量
+      facingRight(true), lastMoveDirection(0, 0),
+      // 添加行走动画相关变量初始化
+      walkAnimationTimer(0), walkAnimationSpeed(0.15f), currentWalkFrame(0),
+      isMoving(false) {
     speed = 150.0f;
     level = 1;
     experience = 0;
@@ -86,6 +89,9 @@ void Player::Update(float deltaTime) {
         }
     }
     
+    // 更新行走动画
+    UpdateWalkAnimation(deltaTime);
+    
     // 边界检测
     position.x = (float)max((float)radius, min((float)(WINDOW_WIDTH - radius), position.x));
     position.y = (float)max((float)radius, min((float)(WINDOW_HEIGHT - radius), position.y));
@@ -109,6 +115,26 @@ void Player::HandleInput(float deltaTime) {
         }
         
         lastMoveDirection = moveDir;
+        isMoving = true;  // 设置移动状态
+    } else {
+        isMoving = false;  // 停止移动
+    }
+}
+
+void Player::UpdateWalkAnimation(float deltaTime) {
+    if (isMoving) {
+        // 更新行走动画计时器
+        walkAnimationTimer += deltaTime;
+        
+        // 切换动画帧
+        if (walkAnimationTimer >= walkAnimationSpeed) {
+            walkAnimationTimer = 0;
+            currentWalkFrame = (currentWalkFrame + 1) % 4; // 4帧动画循环
+        }
+    } else {
+        // 停止移动时重置动画
+        walkAnimationTimer = 0;
+        currentWalkFrame = 0;
     }
 }
 
@@ -117,7 +143,7 @@ void Player::Render() {
     
     // 检查是否在播放斩击动画
     if (slashAnimationTimer > 0 && characterType == CharacterType::WARRIOR) {
-        // 战士斩击动画期间 - 不显示角色模型，只显示斩击动画
+        // 战士斩击动画期间 - 只显示斩击动画，不显示角色模型
         float animationProgress = (slashAnimationDuration - slashAnimationTimer) / slashAnimationDuration;
         int frameIndex = (int)(animationProgress * 3); // 3帧动画
         frameIndex = min(frameIndex, 2); // 确保不超过最大帧数
@@ -151,16 +177,39 @@ void Player::Render() {
             fillcircle((int)position.x, (int)position.y, 25);
         }
         
-        // 斩击动画期间不绘制角色模型
+        // 斩击动画期间不绘制角色模型，直接跳到血条绘制
     } else {
-        // 正常状态 - 显示角色模型
+        // 正常状态 - 显示角色模型（包括行走动画）
         std::string imageKey;
-        if (facingRight) {
-            // 面向右边使用 _right 图片
-            imageKey = characterImageKey + "_right";
+        
+        if (isMoving && characterType == CharacterType::WARRIOR) {
+            // 播放行走动画
+            if (facingRight) {
+                // 面向右边的行走动画
+                switch (currentWalkFrame) {
+                    case 0: imageKey = "move_right1"; break;
+                    case 1: imageKey = "move_right2"; break;
+                    case 2: imageKey = "move_right3"; break;
+                    case 3: imageKey = "move_right4"; break;
+                    default: imageKey = "move_right1"; break;
+                }
+            } else {
+                // 面向左边的行走动画
+                switch (currentWalkFrame) {
+                    case 0: imageKey = "move_left1"; break;
+                    case 1: imageKey = "move_left2"; break;
+                    case 2: imageKey = "move_left3"; break;
+                    case 3: imageKey = "move_left4"; break;
+                    default: imageKey = "move_left1"; break;
+                }
+            }
         } else {
-            // 面向左边使用普通图片
-            imageKey = characterImageKey;
+            // 静止状态 - 使用默认角色图片
+            if (facingRight) {
+                imageKey = characterImageKey + "_right";
+            } else {
+                imageKey = characterImageKey;
+            }
         }
         
         IMAGE* characterImg = imgManager->GetImage(imageKey);

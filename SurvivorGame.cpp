@@ -18,6 +18,7 @@ void SurvivorGame::Run() {
     // 重新初始化图形窗口用于游戏
     closegraph();
     initgraph(WINDOW_WIDTH, WINDOW_HEIGHT);
+	setbkmode(TRANSPARENT);
     
     // 移除原来的背景色设置，因为现在使用图片背景
     // setbkcolor(RGB(34, 139, 34));

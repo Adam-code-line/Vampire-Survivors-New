@@ -28,12 +28,19 @@ private:
     // 添加方向状态
     bool facingRight;
     Vector2 lastMoveDirection;
+    
+    // 行走动画相关
+    float walkAnimationTimer;
+    float walkAnimationSpeed;  // 每帧持续时间
+    int currentWalkFrame;      // 当前动画帧 (0-3)
+    bool isMoving;            // 是否正在移动
 
 public:
     Player(Vector2 pos, CharacterType type = CharacterType::WARRIOR);
 
     void Update(float deltaTime) override;
     void HandleInput(float deltaTime);
+    void UpdateWalkAnimation(float deltaTime);  // 新增：更新行走动画
     void Render() override;
     void DrawHealthBar();
 
@@ -53,6 +60,7 @@ public:
     int GetExperienceToNext() const { return experienceToNext; }
     CharacterType GetCharacterType() const { return characterType; }
     bool IsFacingRight() const { return facingRight; }
+    bool IsMoving() const { return isMoving; }  // 新增：获取移动状态
 
     // 角色系统
     void SetCharacterType(CharacterType type);

@@ -63,12 +63,49 @@ void ImageManager::LoadCharacterImages() {
     LoadImage("cut1_right", _T("img\\cut1_right.png"));
     LoadImage("cut2_right", _T("img\\cut2_right.png"));
     LoadImage("cut3_right", _T("img\\cut3_right.png"));
+
+	//加载战士行动动画帧（向右和向左）
+    LoadImage("move_left1", _T("img\\move_left1.png"));
+    LoadImage("move_left2", _T("img\\move_left2.png"));
+    LoadImage("move_left3", _T("img\\move_left3.png"));
+    LoadImage("move_left4", _T("img\\move_left4.png"));
+
+	LoadImage("move_right1", _T("img\\move_right1.png"));
+	LoadImage("move_right2", _T("img\\move_right2.png"));
+	LoadImage("move_right3", _T("img\\move_right3.png"));
+	LoadImage("move_right4", _T("img\\move_right4.png"));
     
     // 加载剑气图片（四个方向）
     LoadImage("attack_up", _T("img\\attack_up.png"));
     LoadImage("attack_down", _T("img\\attack_down.png"));
     LoadImage("attack_left", _T("img\\attack_left.png"));
     LoadImage("attack_right", _T("img\\attack_right.png"));
+
+    //加载1级怪物行动动画帧
+	LoadImage("monster1_right1", _T("img\\monster1_right1.png"));
+	LoadImage("monster1_right2", _T("img\\monster1_right2.png"));
+    LoadImage("monster1_right3", _T("img\\monster1_right3.png"));
+	LoadImage("monster1_left1", _T("img\\monster1_left1.png"));
+	LoadImage("monster1_left2", _T("img\\monster1_left2.png"));
+    LoadImage("monster1_left3", _T("img\\monster1_left3.png"));
+
+	//加载2级怪物行动动画帧
+	LoadImage("monster2_right1", _T("img\\monster2_right1.png"));
+	LoadImage("monster2_right2", _T("img\\monster2_right2.png"));
+	LoadImage("monster2_right3", _T("img\\monster2_right3.png"));
+    LoadImage("monster2_right4", _T("img\\monster2_right4.png"));
+    LoadImage("monster2_right5", _T("img\\monster2_right5.png"));
+    LoadImage("monster2_right6", _T("img\\monster2_right6.png"));
+    LoadImage("monster2_right7", _T("img\\monster2_right7.png"));
+	LoadImage("monster2_left1", _T("img\\monster2_left1.png"));
+	LoadImage("monster2_left2", _T("img\\monster2_left2.png"));
+	LoadImage("monster2_left3", _T("img\\monster2_left3.png"));
+	LoadImage("monster2_left4", _T("img\\monster2_left4.png"));
+	LoadImage("monster2_left5", _T("img\\monster2_left5.png"));
+	LoadImage("monster2_left6", _T("img\\monster2_left6.png"));
+	LoadImage("monster2_left7", _T("img\\monster2_left7.png"));
+
+
     
     // 加载背景图片
     LoadImage("background", _T("img\\background.png"));
