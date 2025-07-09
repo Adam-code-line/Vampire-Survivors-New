@@ -138,6 +138,7 @@
     <ClCompile Include="MagicBall.cpp" />
     <ClCompile Include="MainMenu.cpp" />
     <ClCompile Include="MeleeAttack.cpp" />
+    <ClCompile Include="MusicManager.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SkillSystem.cpp" />
     <ClCompile Include="StartScreen.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="MagicBall.h" />
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="MeleeAttack.h" />
+    <ClInclude Include="MusicManager.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="SkillSystem.h" />
     <ClInclude Include="StartScreen.h" />

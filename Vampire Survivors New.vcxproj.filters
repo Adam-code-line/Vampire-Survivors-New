@@ -28,6 +28,9 @@
     <Filter Include="Img">
       <UniqueIdentifier>{3d68f6b2-6412-4c55-8614-20be1a97a58f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="mus">
+      <UniqueIdentifier>{c1225250-a678-43ba-bdae-de2af6759166}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -80,6 +83,9 @@
     </ClCompile>
     <ClCompile Include="MagicBall.cpp">
       <Filter>Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="MusicManager.cpp">
+      <Filter>mus</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +151,9 @@
     </ClInclude>
     <ClInclude Include="MagicBall.h">
       <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="MusicManager.h">
+      <Filter>mus</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

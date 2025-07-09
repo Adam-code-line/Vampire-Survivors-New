@@ -170,6 +170,7 @@ void Player::Render() {
         if (slashImg) {
             int drawX = (int)position.x - slashImg->getwidth() / 2;
             int drawY = (int)position.y - slashImg->getheight() / 2;
+            
             imgManager->DrawImageWithTransparency(slashImg, drawX, drawY);
         } else {
             // 如果斩击图片加载失败，显示一个特殊效果
@@ -217,6 +218,7 @@ void Player::Render() {
         if (characterImg) {
             int drawX = (int)position.x - characterImg->getwidth() / 2;
             int drawY = (int)position.y - characterImg->getheight() / 2;
+            
             imgManager->DrawImageWithTransparency(characterImg, drawX, drawY);
         } else {
             // 备用绘制：如果图片加载失败，使用几何图形
@@ -287,9 +289,16 @@ void Player::GainExperience(int exp) {
 }
 
 void Player::LevelUp() {
+    //等级提高人物移速也加快
+    speed += 6.0f; // 每次升级增加6点速度
     level++;
     experience = 0;
-    experienceToNext += 20;
+    experienceToNext += 60;
     maxHealth += 10;
     health = maxHealth;
+}
+
+// 重写受伤方法
+void Player::TakeDamage(int damage) {
+    GameObject::TakeDamage(damage); // 调用基类方法
 }

@@ -52,8 +52,8 @@ float SkillSystem::GetSkillCooldownPercent() const {
 
 void SkillSystem::ExecuteBerserkerRage() {
     // 战士技能：狂暴斩击 - 范围随等级增大
-    float rageRange = 120.0f + player->GetLevel() * 20.0f; // 等级越高范围越大
-    int rageDamage = 50 + player->GetLevel() * 10; // 等级越高伤害越高
+    float rageRange = 120.0f + player->GetLevel() * 2.0f; // 等级越高范围越大
+    int rageDamage = 50 + player->GetLevel() * 2; // 等级越高伤害越高
     
     // 创建8个方向的强化斩击
     for (int i = 0; i < 8; i++) {

@@ -1,13 +1,14 @@
 #include "EnhancedWeaponSystem.h"
 #include "ImageManager.h"
+#include "MusicManager.h"  // 添加音乐管理器头文件
 #include <cmath>
 
 // SwordAura implementation
 SwordAura::SwordAura(Vector2 pos, Player* player, Vector2 dir, float playerLevel)
     : GameObject(pos, 20.0f), owner(player), direction(dir), lifetime(0), maxLifetime(2.0f), speed(250.0f) {
-    damage = 40 + playerLevel * 8; // 基础伤害 + 等级加成
-    scale = 1.0f + playerLevel * 0.2f; // 随等级增大范围
-    radius = 20.0f * scale; // 碰撞半径也随等级增加
+    damage = 40 + playerLevel * 3; // 基础伤害 + 等级加成
+    scale = 1.0f + playerLevel * 0.1f; // 随等级增大范围
+    radius = 10.0f * scale; // 碰撞半径也随等级增加
     auraImageKey = GetAuraImageKey(dir);
     active = true;
 }
@@ -70,7 +71,7 @@ SlashAttack::SlashAttack(Vector2 pos, Player* player, float attackAngle, float a
     : MeleeAttack(pos, player, attackAngle, attackRange), 
       currentFrame(0), frameTime(0), maxFrameTime(0.1f), isWarriorSlash(warrior) {
     maxLifetime = 0.3f; // 增加持续时间以显示完整动画
-    damage = 30 + player->GetLevel() * 5; // 伤害随等级增加
+    damage = 30 + player->GetLevel() * 2; // 伤害随等级增加
 }
 
 void SlashAttack::Update(float deltaTime) {
@@ -152,10 +153,14 @@ void EnhancedWeaponSystem::HandleWarriorSlash(const std::vector<std::unique_ptr<
             float angle = atan2(direction.y, direction.x);
             
             // 斩击范围随等级增加
-            float slashRange = 80.0f + player->GetLevel() * 10.0f;
+            float slashRange = 80.0f + player->GetLevel() * 3.0f;
             
             // 触发玩家的斩击动画
             player->TriggerSlashAnimation();
+            
+            // 播放剑气音效
+            MusicManager* musicManager = MusicManager::GetInstance();
+            musicManager->PlaySwordAuraSound();
             
             // 创建近身斩击攻击
             meleeAttacks->push_back(std::make_unique<SlashAttack>(

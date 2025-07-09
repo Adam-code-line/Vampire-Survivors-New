@@ -41,7 +41,7 @@ void Enemy::SetLevel(int newLevel) {
     if (level == 4) {
         // 4级怪物特殊属性（大幅提升难度）
         speed = 70.0f;                    // 提升移动速度（从50.0f提升到70.0f）
-        health = maxHealth = 150;         // 大幅提升血量（从100提升到150）
+        health = maxHealth = 300;         // 大幅提升血量（从100提升到150）
         experienceValue = 50;             // 更多经验（从40提升到50）
         animationSpeed = 0.12f;           // 更快的动画速度（从0.15f减少到0.12f）
         attackCooldown = 1.5f;            // 大幅减少攻击冷却（从2.0f减少到1.5f）
@@ -49,7 +49,7 @@ void Enemy::SetLevel(int newLevel) {
     } else {
         // 大幅提升其他等级怪物的属性
         speed = 100.0f + (level - 1) * 15.0f;          // 提升基础速度和等级加成（从80+10改为100+15）
-        health = maxHealth = 30 + (level - 1) * 25;    // 提升血量（从20+15改为30+25）
+        health = maxHealth = 60 + (level - 1) * 40;  // 提升血量（从50+20改为60+40）
         experienceValue = 15 + (level - 1) * 8;        // 提升经验值（从10+5改为15+8）
         
         if (level == 2) {
@@ -204,7 +204,7 @@ void Enemy::PerformMeleeAttack() {
     
     auto meleeAttack = std::make_unique<MeleeAttack>(position, nullptr, angle, 85.0f); // 增加攻击范围（从70.0f增加到85.0f）
     // 如果MeleeAttack有SetDamage方法，提升伤害
-    // meleeAttack->SetDamage(45); // 从30提升到45
+    meleeAttack->SetDamage(45); // 从30提升到45
     meleeAttacks->push_back(std::move(meleeAttack));
 }
 

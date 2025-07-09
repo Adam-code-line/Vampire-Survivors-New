@@ -43,6 +43,9 @@ public:
     void UpdateWalkAnimation(float deltaTime);  // 新增：更新行走动画
     void Render() override;
     void DrawHealthBar();
+    
+    // 重写受伤方法（移除override关键字）
+    void TakeDamage(int damage);
 
     bool CanAttack() const;
     void Attack();

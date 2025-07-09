@@ -1,5 +1,6 @@
 #include "SurvivorGame.h"
 #include "ImageManager.h"
+#include "MusicManager.h"  // 添加音乐管理器
 
 SurvivorGame::SurvivorGame() : gameTime(0), gameOver(false), score(0), 
                                selectedCharacter(CharacterType::WARRIOR) {
@@ -12,7 +13,7 @@ void SurvivorGame::Run() {
         return; // 用户选择退出
     }
     
-    // 显示角色选择菜单（不要先关闭窗口）
+    // 显示角色选择菜单
     selectedCharacter = ShowCharacterSelection();
     
     // 清理屏幕，准备游戏界面
@@ -22,6 +23,10 @@ void SurvivorGame::Run() {
     // 加载图片资源
     ImageManager* imgManager = ImageManager::GetInstance();
     imgManager->LoadCharacterImages();
+    
+    // 加载并播放背景音乐 - 使用MusicManager的新方法
+    MusicManager* musicManager = MusicManager::GetInstance();
+    musicManager->LoadGameMusic();
     
     // 初始化游戏
     InitializeGame(selectedCharacter);
@@ -45,8 +50,9 @@ void SurvivorGame::Run() {
     EndBatchDraw();
     ShowGameOver();
     
-    // 清理图片资源
+    // 清理资源
     imgManager->ReleaseAll();
+    musicManager->StopMusic();  // 停止音乐
     
     closegraph();
 }
@@ -103,6 +109,35 @@ void SurvivorGame::Update() {
     lastTime = currentTime;
 
     gameTime += deltaTime;
+
+    // 处理音乐控制按键
+    MusicManager* musicManager = MusicManager::GetInstance();
+    static bool mKeyPressed = false;
+    static bool pKeyPressed = false;
+    
+    // 按 M 键切换音乐开关
+    if (GetAsyncKeyState('M') & 0x8000) {
+        if (!mKeyPressed) {
+            musicManager->SetMusicEnabled(!musicManager->IsMusicEnabled());
+            mKeyPressed = true;
+        }
+    } else {
+        mKeyPressed = false;
+    }
+    
+    // 按 P 键暂停/恢复音乐
+    if (GetAsyncKeyState('P') & 0x8000) {
+        if (!pKeyPressed) {
+            if (musicManager->IsPlaying()) {
+                musicManager->PauseMusic();
+            } else {
+                musicManager->ResumeMusic();
+            }
+            pKeyPressed = true;
+        }
+    } else {
+        pKeyPressed = false;
+    }
 
     // 检查技能释放
     if (GetAsyncKeyState('Q') & 0x8000) {
@@ -337,6 +372,16 @@ void SurvivorGame::DrawUI() {
     _stprintf_s(scoreText, _T("Score: %d"), score);
     outtextxy(WINDOW_WIDTH - 150, 20, scoreText);
 
+    // === 音乐状态显示 ===
+    MusicManager* musicManager = MusicManager::GetInstance();
+    if (musicManager->IsMusicEnabled()) {
+        settextcolor(RGB(0, 255, 0)); // 绿色
+        outtextxy(WINDOW_WIDTH - 280, 20, _T("\u266A ON"));  // Unicode音乐符号
+    } else {
+        settextcolor(RGB(255, 0, 0)); // 红色
+        outtextxy(WINDOW_WIDTH - 280, 20, _T("\u266A OFF")); // Unicode音乐符号
+    }
+
     // === 经验条 ===
     int expBarWidth = 200;
     int expBarHeight = 20;
@@ -375,13 +420,15 @@ void SurvivorGame::DrawUI() {
     DrawSkillUI();
     DrawItemEffects();  // 道具效果显示
 
-    // === 底部控制提示 ===
+    // === 底部控制提示（更新） ===
     settextcolor(RGB(255, 255, 100)); // 浅黄色
     settextstyle(14, 0, _T("Arial"));
-    outtextxy(20, WINDOW_HEIGHT - 80, _T("Controls:"));
-    outtextxy(20, WINDOW_HEIGHT - 60, _T("Q - Use Skill"));
-    outtextxy(20, WINDOW_HEIGHT - 45, _T("WASD - Move"));
-    outtextxy(20, WINDOW_HEIGHT - 30, _T("Collect items for power-ups!"));
+    outtextxy(20, WINDOW_HEIGHT - 100, _T("Controls:"));
+    outtextxy(20, WINDOW_HEIGHT - 80, _T("Q - Use Skill"));
+    outtextxy(20, WINDOW_HEIGHT - 65, _T("WASD - Move"));
+    outtextxy(20, WINDOW_HEIGHT - 50, _T("M - Toggle Music"));
+    outtextxy(20, WINDOW_HEIGHT - 35, _T("P - Pause/Resume Music"));
+    outtextxy(20, WINDOW_HEIGHT - 20, _T("Collect items for power-ups!"));
 }
 
 void SurvivorGame::DrawSkillUI() {

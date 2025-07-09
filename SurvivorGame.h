@@ -3,7 +3,7 @@
 #include "Enemy.h"
 #include "Bullet.h"
 #include "MeleeAttack.h"
-#include "MagicBall.h"  // 新增
+#include "MagicBall.h"
 #include "ExperienceGem.h"
 #include "Item.h"
 #include "WeaponSystem.h"
@@ -13,7 +13,8 @@
 #include "GameConfig.h"
 #include "Character.h"
 #include "MainMenu.h"
-#include "StartScreen.h"  // 添加开始界面头文件
+#include "StartScreen.h"
+#include "MusicManager.h"  // 添加音乐管理器头文件
 #include <graphics.h>
 #include <vector>
 #include <memory>
