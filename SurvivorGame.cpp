@@ -122,6 +122,11 @@ void SurvivorGame::Update() {
     for (auto& melee : meleeAttacks) {
         melee->Update(deltaTime);
     }
+    
+    // 新增：更新魔法球
+    for (auto& magicBall : magicBalls) {
+        magicBall->Update(deltaTime);
+    }
 
     for (auto& enemy : enemies) {
         enemy->Update(deltaTime);
@@ -135,10 +140,10 @@ void SurvivorGame::Update() {
         item->Update(deltaTime);
     }
 
-    // 为4级怪物设置容器引用
+    // 为4级怪物设置容器引用（包括魔法球）
     for (auto& enemy : enemies) {
         if (enemy->GetLevel() == 4) {
-            enemy->SetGameContainers(&bullets, &meleeAttacks);
+            enemy->SetGameContainers(&bullets, &meleeAttacks, &magicBalls);
         }
     }
 
@@ -172,6 +177,16 @@ void SurvivorGame::HandleCollisions() {
                 }
                 break;
             }
+        }
+    }
+    
+    // 新增：魔法球与玩家碰撞
+    for (auto& magicBall : magicBalls) {
+        if (!magicBall->active) continue;
+
+        if (magicBall->CheckCollision(*player)) {
+            player->TakeDamage(magicBall->GetDamage());
+            magicBall->active = false;
         }
     }
 
@@ -245,6 +260,10 @@ void SurvivorGame::CleanupObjects() {
 
     meleeAttacks.erase(std::remove_if(meleeAttacks.begin(), meleeAttacks.end(),
         [](const std::unique_ptr<MeleeAttack>& m) { return !m->active; }), meleeAttacks.end());
+    
+    // 新增：清理魔法球
+    magicBalls.erase(std::remove_if(magicBalls.begin(), magicBalls.end(),
+        [](const std::unique_ptr<MagicBall>& magicBall) { return !magicBall->active; }), magicBalls.end());
 
     enemies.erase(std::remove_if(enemies.begin(), enemies.end(),
         [](const std::unique_ptr<Enemy>& e) { return !e->active; }), enemies.end());
@@ -281,6 +300,11 @@ void SurvivorGame::Render() {
 
     for (auto& melee : meleeAttacks) {
         melee->Render();
+    }
+    
+    // 新增：渲染魔法球
+    for (auto& magicBall : magicBalls) {
+        magicBall->Render();
     }
 
     // 渲染武器系统（包括剑气）

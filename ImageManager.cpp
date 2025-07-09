@@ -126,6 +126,9 @@ void ImageManager::LoadCharacterImages() {
     LoadImage("monster4_left3", _T("img\\monster4_left3.png"));
     LoadImage("monster4_left4", _T("img\\monster4_left4.png"));
 
+    //加载4级怪物远程攻击
+    LoadImage("magic_attack", _T("img\\magic_attack.png"));
+
     
     // 加载背景图片
     LoadImage("background", _T("img\\background.png"));

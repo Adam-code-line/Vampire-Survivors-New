@@ -2,6 +2,7 @@
 #include "ImageManager.h"
 #include "Bullet.h"
 #include "MeleeAttack.h"
+#include "MagicBall.h"  // 确保包含魔法球头文件
 #include <cmath>
 
 Enemy::Enemy(Vector2 pos, Player* player, int enemyLevel)
@@ -13,7 +14,7 @@ Enemy::Enemy(Vector2 pos, Player* player, int enemyLevel)
       currentState(Monster4State::MOVING), stateTimer(0),
       attackCooldown(3.0f), attackTimer(0),
       hoverOffset(0), hoverSpeed(2.0f), attackExecuted(false),
-      bullets(nullptr), meleeAttacks(nullptr) {
+      bullets(nullptr), meleeAttacks(nullptr), magicBalls(nullptr) {  // 初始化魔法球容器
     
     // 根据等级调整属性
     SetLevel(level);
@@ -23,9 +24,11 @@ Enemy::Enemy(Vector2 pos, Player* player, int enemyLevel)
 }
 
 void Enemy::SetGameContainers(std::vector<std::unique_ptr<Bullet>>* b, 
-                             std::vector<std::unique_ptr<MeleeAttack>>* m) {
+                             std::vector<std::unique_ptr<MeleeAttack>>* m,
+                             std::vector<std::unique_ptr<MagicBall>>* mb) {
     bullets = b;
     meleeAttacks = m;
+    magicBalls = mb;  // 设置魔法球容器
 }
 
 void Enemy::SetLevel(int newLevel) {
@@ -36,24 +39,25 @@ void Enemy::SetLevel(int newLevel) {
     radius = 15.0f;         // 固定半径
     
     if (level == 4) {
-        // 4级怪物特殊属性（优化攻击速度）
-        speed = 50.0f;                    // 较慢的移动速度
-        health = maxHealth = 100;         // 适中的血量
-        experienceValue = 40;             // 更多经验
-        animationSpeed = 0.15f;           // 适中的动画速度
-        attackCooldown = 2.0f;            // 减少攻击冷却（从3.0f减少到2.0f）
-        hoverSpeed = 2.0f;                // 浮动速度
+        // 4级怪物特殊属性（大幅提升难度）
+        speed = 70.0f;                    // 提升移动速度（从50.0f提升到70.0f）
+        health = maxHealth = 150;         // 大幅提升血量（从100提升到150）
+        experienceValue = 50;             // 更多经验（从40提升到50）
+        animationSpeed = 0.12f;           // 更快的动画速度（从0.15f减少到0.12f）
+        attackCooldown = 1.5f;            // 大幅减少攻击冷却（从2.0f减少到1.5f）
+        hoverSpeed = 2.5f;                // 更快的浮动速度（从2.0f提升到2.5f）
     } else {
-        speed = 80.0f + (level - 1) * 10.0f;          
-        health = maxHealth = 20 + (level - 1) * 15;   
-        experienceValue = 10 + (level - 1) * 5;       
+        // 大幅提升其他等级怪物的属性
+        speed = 100.0f + (level - 1) * 15.0f;          // 提升基础速度和等级加成（从80+10改为100+15）
+        health = maxHealth = 30 + (level - 1) * 25;    // 提升血量（从20+15改为30+25）
+        experienceValue = 15 + (level - 1) * 8;        // 提升经验值（从10+5改为15+8）
         
         if (level == 2) {
-            animationSpeed = 0.15f;
+            animationSpeed = 0.12f;  // 更快动画（从0.15f改为0.12f）
         } else if (level == 3) {
-            animationSpeed = 0.12f;
+            animationSpeed = 0.10f;  // 更快动画（从0.12f改为0.10f）
         } else {
-            animationSpeed = 0.2f;
+            animationSpeed = 0.15f;  // 1级怪物也提升动画速度（从0.2f改为0.15f）
         }
     }
     
@@ -149,15 +153,15 @@ void Enemy::UpdateMonster4State(float deltaTime) {
     
     switch (currentState) {
         case Monster4State::MOVING:
-            // 检查是否可以攻击 - 增加远程攻击范围
-            if (distanceToPlayer <= 60.0f && attackTimer <= 0) {
-                // 近距离 - 近战攻击
+            // 检查是否可以攻击 - 增加攻击范围和触发频率
+            if (distanceToPlayer <= 80.0f && attackTimer <= 0) {
+                // 近距离 - 近战攻击（范围从60增加到80）
                 currentState = Monster4State::MELEE_ATTACK;
                 stateTimer = 0;
                 attackTimer = attackCooldown;
                 attackExecuted = false;
-            } else if (distanceToPlayer <= 300.0f && distanceToPlayer > 60.0f && attackTimer <= 0) {
-                // 中远距离 - 远程攻击（范围从200增加到300）
+            } else if (distanceToPlayer <= 350.0f && distanceToPlayer > 80.0f && attackTimer <= 0) {
+                // 中远距离 - 远程攻击（范围从300增加到350）
                 currentState = Monster4State::RANGE_ATTACK;
                 stateTimer = 0;
                 attackTimer = attackCooldown;
@@ -166,24 +170,24 @@ void Enemy::UpdateMonster4State(float deltaTime) {
             break;
             
         case Monster4State::MELEE_ATTACK:
-            // 减短近战攻击蓄力时间：0.3秒后执行攻击，0.8秒后结束
-            if (!attackExecuted && stateTimer >= 0.3f) {
+            // 缩短近战攻击蓄力时间：0.2秒后执行攻击，0.6秒后结束（更快）
+            if (!attackExecuted && stateTimer >= 0.2f) {
                 PerformMeleeAttack();
                 attackExecuted = true;
             }
-            if (stateTimer >= 0.8f) {
+            if (stateTimer >= 0.6f) {
                 currentState = Monster4State::MOVING;
                 stateTimer = 0;
             }
             break;
             
         case Monster4State::RANGE_ATTACK:
-            // 减短远程攻击蓄力时间：0.4秒后执行攻击，1.0秒后结束
-            if (!attackExecuted && stateTimer >= 0.4f) {
+            // 缩短远程攻击蓄力时间：0.3秒后执行攻击，0.7秒后结束（更快）
+            if (!attackExecuted && stateTimer >= 0.3f) {
                 PerformRangeAttack();
                 attackExecuted = true;
             }
-            if (stateTimer >= 1.0f) {
+            if (stateTimer >= 0.7f) {
                 currentState = Monster4State::MOVING;
                 stateTimer = 0;
             }
@@ -194,23 +198,24 @@ void Enemy::UpdateMonster4State(float deltaTime) {
 void Enemy::PerformMeleeAttack() {
     if (!meleeAttacks || !target) return;
     
-    // 创建简单近战攻击
+    // 创建更强的近战攻击
     Vector2 direction = (target->position - position).Normalized();
     float angle = atan2(direction.y, direction.x);
     
-    auto meleeAttack = std::make_unique<MeleeAttack>(position, nullptr, angle, 70.0f);
-    // 如果MeleeAttack有SetDamage方法，取消注释下行
-    // meleeAttack->SetDamage(30);
+    auto meleeAttack = std::make_unique<MeleeAttack>(position, nullptr, angle, 85.0f); // 增加攻击范围（从70.0f增加到85.0f）
+    // 如果MeleeAttack有SetDamage方法，提升伤害
+    // meleeAttack->SetDamage(45); // 从30提升到45
     meleeAttacks->push_back(std::move(meleeAttack));
 }
 
 void Enemy::PerformRangeAttack() {
-    if (!bullets || !target) return;
+    if (!magicBalls || !target) return;
     
-    // 发射更快的追踪子弹，提升远程攻击效果
+    // 发射更快更强的魔法球
     Vector2 direction = (target->position - position).Normalized();
-    auto bullet = std::make_unique<Bullet>(position, direction, 300.0f); // 增加子弹速度
-    bullets->push_back(std::move(bullet));
+    auto magicBall = std::make_unique<MagicBall>(position, direction, 250.0f); // 提升速度（从200.0f提升到250.0f）
+    magicBall->SetDamage(45); // 大幅提升魔法球伤害（从35提升到45）
+    magicBalls->push_back(std::move(magicBall));
 }
 
 void Enemy::UpdateAnimation(float deltaTime) {

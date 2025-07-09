@@ -10,6 +10,7 @@
 // 前向声明
 class Bullet;
 class MeleeAttack;
+class MagicBall;  // 新增魔法球前向声明
 
 // 简化的4级怪物状态枚举
 enum class Monster4State {
@@ -46,6 +47,7 @@ private:
     // 引用游戏对象容器（用于生成子弹和攻击）
     std::vector<std::unique_ptr<Bullet>>* bullets;
     std::vector<std::unique_ptr<MeleeAttack>>* meleeAttacks;
+    std::vector<std::unique_ptr<MagicBall>>* magicBalls;  // 新增魔法球容器
 
 public:
     Enemy(Vector2 pos, Player* player, int enemyLevel = 1);
@@ -60,7 +62,8 @@ public:
     
     // 4级怪物专用方法
     void SetGameContainers(std::vector<std::unique_ptr<Bullet>>* b, 
-                          std::vector<std::unique_ptr<MeleeAttack>>* m);
+                          std::vector<std::unique_ptr<MeleeAttack>>* m,
+                          std::vector<std::unique_ptr<MagicBall>>* mb = nullptr);  // 修改方法签名
     
 private:
     void RenderWithImage();     // 使用图片渲染
@@ -71,6 +74,6 @@ private:
     void UpdateMonster4(float deltaTime);    // 4级怪物更新逻辑
     void UpdateMonster4State(float deltaTime); // 更新4级怪物状态
     void PerformMeleeAttack();              // 执行近战攻击
-    void PerformRangeAttack();              // 执行远程攻击
+    void PerformRangeAttack();              // 执行远程攻击（魔法球）
     void RenderMonster4();                  // 4级怪物渲染
 };

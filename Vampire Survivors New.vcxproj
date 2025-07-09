@@ -135,6 +135,7 @@
     <ClCompile Include="ImageManager.cpp" />
     <ClCompile Include="Item2.cpp" />
     <ClCompile Include="ItemSystem.cpp" />
+    <ClCompile Include="MagicBall.cpp" />
     <ClCompile Include="MainMenu.cpp" />
     <ClCompile Include="MeleeAttack.cpp" />
     <ClCompile Include="Player.cpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="Item.h" />
     <ClInclude Include="Item2.h" />
     <ClInclude Include="ItemSystem.h" />
+    <ClInclude Include="MagicBall.h" />
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="MeleeAttack.h" />
     <ClInclude Include="Player.h" />

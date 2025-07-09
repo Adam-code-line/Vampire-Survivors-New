@@ -3,6 +3,7 @@
 #include "Enemy.h"
 #include "Bullet.h"
 #include "MeleeAttack.h"
+#include "MagicBall.h"  // 新增
 #include "ExperienceGem.h"
 #include "Item.h"
 #include "WeaponSystem.h"
@@ -28,6 +29,7 @@ private:
     std::vector<std::unique_ptr<Enemy>> enemies;
     std::vector<std::unique_ptr<Bullet>> bullets;
     std::vector<std::unique_ptr<MeleeAttack>> meleeAttacks;
+    std::vector<std::unique_ptr<MagicBall>> magicBalls;  // 新增魔法球容器
     std::vector<std::unique_ptr<ExperienceGem>> gems;
     std::vector<std::unique_ptr<Item>> items;
     std::unique_ptr<EnhancedWeaponSystem> weaponSystem;
