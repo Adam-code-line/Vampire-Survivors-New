@@ -62,7 +62,7 @@
 欢迎提交 Issue 或 Pull Request 来帮助完善项目！
 
 ## 开发者
-- **开发者**: [你的名字](https://github.com/Adam-code-line)
+- **开发者**: [Adam-code-line](https://github.com/Adam-code-line)
 - **邮箱**: ......
 
 ## 许可证
