@@ -372,6 +372,12 @@ int StartScreen::HandleInput() {
             for (size_t i = 0; i < buttons.size(); i++) {
                 if (buttons[i].Contains(mousePos.x, mousePos.y)) {
                     selectedOption = (int)i;
+                    
+                    // 等待鼠标释放后再返回，防止事件传递到下一个界面
+                    while (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+                        Sleep(10);
+                    }
+                    
                     return 1; // 模拟按下Enter
                 }
             }

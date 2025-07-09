@@ -61,8 +61,12 @@ void MainMenu::InitializeCharacterCards() {
 }
 
 CharacterType MainMenu::ShowMenu() {
-    initgraph(WINDOW_WIDTH, WINDOW_HEIGHT);
+    // 注释掉这行，不要重新初始化窗口
+    // initgraph(WINDOW_WIDTH, WINDOW_HEIGHT);
+    
+    // 只设置背景色，不重新创建窗口
     setbkcolor(RGB(20, 20, 40));
+    cleardevice();  // 清空当前内容
     
     // 开始双缓冲绘制
     BeginBatchDraw();
@@ -344,6 +348,12 @@ int MainMenu::HandleInput() {
             for (size_t i = 0; i < characterCards.size(); i++) {
                 if (characterCards[i].Contains(mousePos.x, mousePos.y)) {
                     selectedCharacter = (int)i;
+                    
+                    // 等待鼠标释放后再返回，确保点击完成
+                    while (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+                        Sleep(10);
+                    }
+                    
                     return 1; // 模拟按下Enter，直接确认选择
                 }
             }
