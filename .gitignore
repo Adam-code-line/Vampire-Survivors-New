@@ -1,1 +1,39 @@
+# Visual Studio 相关文件
 .vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.suo
+*.ipch
+*.db
+*.opendb
+*.tlog
+*.log
+*.pdb
+*.obj
+*.idb
+*.ilk
+*.aps
+*.ncb
+*.sdf
+*.cache
+*.VC.db
+
+# 编译输出目录
+x64/
+x86/
+Debug/
+Release/
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*.res
+
+# 系统文件
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Git 忽略文件
+.gitignore
