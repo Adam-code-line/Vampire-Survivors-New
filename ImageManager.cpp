@@ -105,6 +105,26 @@ void ImageManager::LoadCharacterImages() {
 	LoadImage("monster2_left6", _T("img\\monster2_left6.png"));
 	LoadImage("monster2_left7", _T("img\\monster2_left7.png"));
 
+    //加载3级怪物行动动画帧
+    LoadImage("monster3_right1", _T("img\\monster3_right1.png"));
+    LoadImage("monster3_right2", _T("img\\monster3_right2.png"));
+    LoadImage("monster3_right3", _T("img\\monster3_right3.png"));
+    LoadImage("monster3_right4", _T("img\\monster3_right4.png"));
+    LoadImage("monster3_left1", _T("img\\monster3_left1.png"));
+    LoadImage("monster3_left2", _T("img\\monster3_left2.png"));
+    LoadImage("monster3_left3", _T("img\\monster3_left3.png"));
+    LoadImage("monster3_left4", _T("img\\monster3_left4.png"));
+
+
+    //加载4级怪物行动动画帧
+    LoadImage("monster4_right1", _T("img\\monster4_right1.png"));
+    LoadImage("monster4_right2", _T("img\\monster4_right2.png"));
+    LoadImage("monster4_right3", _T("img\\monster4_right3.png"));
+    LoadImage("monster4_right4", _T("img\\monster4_right4.png"));
+    LoadImage("monster4_left1", _T("img\\monster4_left1.png"));
+    LoadImage("monster4_left2", _T("img\\monster4_left2.png"));
+    LoadImage("monster4_left3", _T("img\\monster4_left3.png"));
+    LoadImage("monster4_left4", _T("img\\monster4_left4.png"));
 
     
     // 加载背景图片
@@ -126,14 +146,18 @@ void ImageManager::DrawImageWithTransparency(const std::string& key, int x, int 
     }
 }
 
+// 新增不透明绘制方法
+void ImageManager::DrawImageOpaque(IMAGE* img, int x, int y) {
+    if (!img) return;
+    putimage(x, y, img);
+}
+
 // 更可靠的透明绘制方法
 void ImageManager::DrawImageWithTransparency(IMAGE* img, int x, int y) {
     if (!img) return;
     
-    // 方法：手动处理像素透明度
     DWORD* pBuf = GetImageBuffer(img);
     if (!pBuf) {
-        // 如果无法获取缓冲区，直接绘制
         putimage(x, y, img);
         return;
     }
@@ -154,16 +178,18 @@ void ImageManager::DrawImageWithTransparency(IMAGE* img, int x, int y) {
         for (int i = 0; i < width * height; i++) {
             DWORD srcPixel = pBuf[i];
             
-            // 检查是否为黑色或深色（当作透明）
             int r = GetRValue(srcPixel);
             int g = GetGValue(srcPixel);
             int b = GetBValue(srcPixel);
             
-            // 如果不是黑色/深色，则使用原像素；否则保持背景
-            if (r > 20 || g > 20 || b > 20) {
+            // 只有纯黑色RGB(0,0,0)才作为透明色
+            // 这样可以保留深色但不是纯黑的颜色
+            if (r == 0 && g == 0 && b == 0) {
+                // 纯黑色保持背景
+            } else {
+                // 所有其他颜色正常显示
                 tempBuf[i] = srcPixel;
             }
-            // 黑色像素保持不变（使用背景）
         }
         
         // 绘制处理后的图像

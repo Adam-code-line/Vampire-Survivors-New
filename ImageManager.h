@@ -25,6 +25,9 @@ public:
     void DrawImageWithTransparency(const std::string& key, int x, int y);
     void DrawImageWithTransparency(IMAGE* img, int x, int y);
     
+    // 新增：不透明绘制函数
+    void DrawImageOpaque(IMAGE* img, int x, int y);
+    
     // 缩放绘制函数
     void DrawImageScaled(IMAGE* img, int x, int y, float scale);
     

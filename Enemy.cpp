@@ -1,11 +1,19 @@
 #include "Enemy.h"
 #include "ImageManager.h"
+#include "Bullet.h"
+#include "MeleeAttack.h"
+#include <cmath>
 
 Enemy::Enemy(Vector2 pos, Player* player, int enemyLevel)
     : GameObject(pos, 15), speed(80.0f), target(player), experienceValue(10), 
       level(enemyLevel), sizeMultiplier(1.0f),
       animationTimer(0), animationSpeed(0.2f), currentFrame(0),
-      facingRight(true), isMoving(false), useImageRendering(false) {
+      facingRight(true), isMoving(false), useImageRendering(false),
+      // 4级怪物专用变量初始化（简化）
+      currentState(Monster4State::MOVING), stateTimer(0),
+      attackCooldown(3.0f), attackTimer(0),
+      hoverOffset(0), hoverSpeed(2.0f), attackExecuted(false),
+      bullets(nullptr), meleeAttacks(nullptr) {
     
     // 根据等级调整属性
     SetLevel(level);
@@ -14,27 +22,41 @@ Enemy::Enemy(Vector2 pos, Player* player, int enemyLevel)
     CheckImageResources();
 }
 
+void Enemy::SetGameContainers(std::vector<std::unique_ptr<Bullet>>* b, 
+                             std::vector<std::unique_ptr<MeleeAttack>>* m) {
+    bullets = b;
+    meleeAttacks = m;
+}
+
 void Enemy::SetLevel(int newLevel) {
     level = newLevel;
     
-    // 根据等级调整属性（移除体型增大）
+    // 根据等级调整属性
     sizeMultiplier = 1.0f;  // 固定大小，不随等级变化
     radius = 15.0f;         // 固定半径
     
-    speed = 80.0f + (level - 1) * 10.0f;          // 每级增加10速度
-    health = maxHealth = 20 + (level - 1) * 15;   // 每级增加15血量
-    experienceValue = 10 + (level - 1) * 5;       // 每级增加5经验
-    
-    // 根据等级调整动画速度
-    if (level == 2) {
-        animationSpeed = 0.15f;  // 2级：更快的动画切换
-    } else if (level == 3) {
-        animationSpeed = 0.12f;  // 3级：最快的动画切换
+    if (level == 4) {
+        // 4级怪物特殊属性（优化攻击速度）
+        speed = 50.0f;                    // 较慢的移动速度
+        health = maxHealth = 100;         // 适中的血量
+        experienceValue = 40;             // 更多经验
+        animationSpeed = 0.15f;           // 适中的动画速度
+        attackCooldown = 2.0f;            // 减少攻击冷却（从3.0f减少到2.0f）
+        hoverSpeed = 2.0f;                // 浮动速度
     } else {
-        animationSpeed = 0.2f;   // 默认速度
+        speed = 80.0f + (level - 1) * 10.0f;          
+        health = maxHealth = 20 + (level - 1) * 15;   
+        experienceValue = 10 + (level - 1) * 5;       
+        
+        if (level == 2) {
+            animationSpeed = 0.15f;
+        } else if (level == 3) {
+            animationSpeed = 0.12f;
+        } else {
+            animationSpeed = 0.2f;
+        }
     }
     
-    // 重新检查图片资源
     CheckImageResources();
 }
 
@@ -42,16 +64,16 @@ void Enemy::CheckImageResources() {
     ImageManager* imgManager = ImageManager::GetInstance();
     
     if (level == 1) {
-        // 检查1级怪物图片
         IMAGE* testImg = imgManager->GetImage("monster1_right1");
         useImageRendering = (testImg != nullptr);
     } else if (level == 2) {
-        // 检查2级怪物图片
         IMAGE* testImg = imgManager->GetImage("monster2_right1");
         useImageRendering = (testImg != nullptr);
     } else if (level == 3) {
-        // 检查3级怪物图片
         IMAGE* testImg = imgManager->GetImage("monster3_right1");
+        useImageRendering = (testImg != nullptr);
+    } else if (level == 4) {
+        IMAGE* testImg = imgManager->GetImage("monster4_right1");
         useImageRendering = (testImg != nullptr);
     } else {
         useImageRendering = false;
@@ -59,61 +81,282 @@ void Enemy::CheckImageResources() {
 }
 
 void Enemy::Update(float deltaTime) {
-    Vector2 oldPosition = position;
-    
-    if (target && target->active) {
-        // 向玩家移动
-        Vector2 direction = (target->position - position).Normalized();
-        position = position + direction * speed * deltaTime;
+    if (level == 4) {
+        UpdateMonster4(deltaTime);
+    } else {
+        // 其他等级怪物的原有逻辑
+        Vector2 oldPosition = position;
         
-        // 修复朝向逻辑：
-        // facingRight = true 表示使用 _right 图片（面向右）
-        // facingRight = false 表示使用 _left 图片（面向左）
-        if (abs(direction.x) > 0.1f) { // 只有在明显的水平移动时才更新朝向
-            facingRight = direction.x > 0; // 向右移动时 facingRight = true
+        if (target && target->active) {
+            Vector2 direction = (target->position - position).Normalized();
+            position = position + direction * speed * deltaTime;
+            
+            if (abs(direction.x) > 0.1f) {
+                facingRight = direction.x > 0;
+            }
+            
+            isMoving = (position - oldPosition).Length() > 0.1f;
+        } else {
+            isMoving = false;
         }
         
-        // 检查是否在移动
-        isMoving = (position - oldPosition).Length() > 0.1f;
-    } else {
-        isMoving = false;
+        UpdateAnimation(deltaTime);
+    }
+}
+
+void Enemy::UpdateMonster4(float deltaTime) {
+    // 更新计时器
+    stateTimer += deltaTime;
+    attackTimer -= deltaTime;
+    
+    // 更新浮动效果（简化）
+    hoverOffset = sin(GetTickCount() * 0.003f * hoverSpeed) * 5.0f;
+    
+    // 更新状态机
+    UpdateMonster4State(deltaTime);
+    
+    // 根据状态执行不同逻辑
+    switch (currentState) {
+        case Monster4State::MOVING:
+            if (target && target->active) {
+                Vector2 direction = (target->position - position).Normalized();
+                position = position + direction * speed * deltaTime;
+                
+                if (abs(direction.x) > 0.1f) {
+                    facingRight = direction.x > 0;
+                }
+                isMoving = true;
+            } else {
+                isMoving = false;
+            }
+            break;
+            
+        case Monster4State::MELEE_ATTACK:
+        case Monster4State::RANGE_ATTACK:
+            // 攻击状态下不移动
+            isMoving = false;
+            break;
     }
     
     // 更新动画
     UpdateAnimation(deltaTime);
 }
 
+void Enemy::UpdateMonster4State(float deltaTime) {
+    if (!target || !target->active) return;
+    
+    float distanceToPlayer = position.Distance(target->position);
+    
+    switch (currentState) {
+        case Monster4State::MOVING:
+            // 检查是否可以攻击 - 增加远程攻击范围
+            if (distanceToPlayer <= 60.0f && attackTimer <= 0) {
+                // 近距离 - 近战攻击
+                currentState = Monster4State::MELEE_ATTACK;
+                stateTimer = 0;
+                attackTimer = attackCooldown;
+                attackExecuted = false;
+            } else if (distanceToPlayer <= 300.0f && distanceToPlayer > 60.0f && attackTimer <= 0) {
+                // 中远距离 - 远程攻击（范围从200增加到300）
+                currentState = Monster4State::RANGE_ATTACK;
+                stateTimer = 0;
+                attackTimer = attackCooldown;
+                attackExecuted = false;
+            }
+            break;
+            
+        case Monster4State::MELEE_ATTACK:
+            // 减短近战攻击蓄力时间：0.3秒后执行攻击，0.8秒后结束
+            if (!attackExecuted && stateTimer >= 0.3f) {
+                PerformMeleeAttack();
+                attackExecuted = true;
+            }
+            if (stateTimer >= 0.8f) {
+                currentState = Monster4State::MOVING;
+                stateTimer = 0;
+            }
+            break;
+            
+        case Monster4State::RANGE_ATTACK:
+            // 减短远程攻击蓄力时间：0.4秒后执行攻击，1.0秒后结束
+            if (!attackExecuted && stateTimer >= 0.4f) {
+                PerformRangeAttack();
+                attackExecuted = true;
+            }
+            if (stateTimer >= 1.0f) {
+                currentState = Monster4State::MOVING;
+                stateTimer = 0;
+            }
+            break;
+    }
+}
+
+void Enemy::PerformMeleeAttack() {
+    if (!meleeAttacks || !target) return;
+    
+    // 创建简单近战攻击
+    Vector2 direction = (target->position - position).Normalized();
+    float angle = atan2(direction.y, direction.x);
+    
+    auto meleeAttack = std::make_unique<MeleeAttack>(position, nullptr, angle, 70.0f);
+    // 如果MeleeAttack有SetDamage方法，取消注释下行
+    // meleeAttack->SetDamage(30);
+    meleeAttacks->push_back(std::move(meleeAttack));
+}
+
+void Enemy::PerformRangeAttack() {
+    if (!bullets || !target) return;
+    
+    // 发射更快的追踪子弹，提升远程攻击效果
+    Vector2 direction = (target->position - position).Normalized();
+    auto bullet = std::make_unique<Bullet>(position, direction, 300.0f); // 增加子弹速度
+    bullets->push_back(std::move(bullet));
+}
+
 void Enemy::UpdateAnimation(float deltaTime) {
-    if (isMoving && (level == 1 || level == 2 || level == 3)) {
-        // 更新动画计时器
+    if (level == 4) {
+        // 4级怪物特殊动画逻辑（移除技能相关）
         animationTimer += deltaTime;
         
-        // 切换动画帧
+        if (animationTimer >= animationSpeed) {
+            animationTimer = 0;
+            
+            switch (currentState) {
+                case Monster4State::MOVING:
+                    // 移动状态：只使用 monster4_right1 和 monster4_left1 做上下浮动
+                    currentFrame = (currentFrame + 1) % 2;
+                    break;
+                    
+                case Monster4State::MELEE_ATTACK:
+                    // 近战攻击：使用 monster4_right2 和 monster4_left2
+                    currentFrame = 1; // 固定使用第2帧
+                    break;
+                    
+                case Monster4State::RANGE_ATTACK:
+                    // 远程攻击：使用 monster4_right3 和 monster4_left3
+                    currentFrame = 2; // 固定使用第3帧
+                    break;
+            }
+        }
+    } else if (isMoving && (level == 1 || level == 2 || level == 3)) {
+        // 其他等级怪物的原有动画逻辑
+        animationTimer += deltaTime;
+        
         if (animationTimer >= animationSpeed) {
             animationTimer = 0;
             
             if (level == 1) {
-                currentFrame = (currentFrame + 1) % 3; // 1级：3帧动画循环 (0, 1, 2)
+                currentFrame = (currentFrame + 1) % 3;
             } else if (level == 2) {
-                currentFrame = (currentFrame + 1) % 7; // 2级：7帧动画循环 (0-6)
+                currentFrame = (currentFrame + 1) % 7;
             } else if (level == 3) {
-                currentFrame = (currentFrame + 1) % 4; // 3级：4帧动画循环 (0-3)
+                currentFrame = (currentFrame + 1) % 4;
             }
         }
     } else {
-        // 停止移动时重置动画
         animationTimer = 0;
         currentFrame = 0;
     }
 }
 
 void Enemy::Render() {
-    // 严格按照渲染模式选择，避免混合
-    if (useImageRendering && (level == 1 || level == 2 || level == 3)) {
-        RenderWithImage();
+    if (useImageRendering && (level == 1 || level == 2 || level == 3 || level == 4)) {
+        if (level == 4) {
+            RenderMonster4();
+        } else {
+            RenderWithImage();
+        }
     } else {
         RenderWithGeometry();
     }
+}
+
+void Enemy::RenderMonster4() {
+    ImageManager* imgManager = ImageManager::GetInstance();
+    std::string imageKey;
+    
+    // 简化图片选择逻辑
+    switch (currentState) {
+        case Monster4State::MOVING:
+            imageKey = facingRight ? "monster4_right1" : "monster4_left1";
+            break;
+        case Monster4State::MELEE_ATTACK:
+            imageKey = facingRight ? "monster4_right2" : "monster4_left2";
+            break;
+        case Monster4State::RANGE_ATTACK:
+            imageKey = facingRight ? "monster4_right3" : "monster4_left3";
+            break;
+    }
+    
+    // 检查左侧图片是否存在，不存在则使用右侧图片
+    IMAGE* monsterImg = imgManager->GetImage(imageKey);
+    if (!monsterImg && !facingRight) {
+        std::string rightKey = imageKey;
+        size_t pos = rightKey.find("_left");
+        if (pos != std::string::npos) {
+            rightKey.replace(pos, 5, "_right");
+            monsterImg = imgManager->GetImage(rightKey);
+        }
+    }
+    
+    if (monsterImg && monsterImg->getwidth() > 0 && monsterImg->getheight() > 0) {
+        // 应用浮动效果
+        float drawY = position.y + hoverOffset;
+        
+        int drawX = (int)position.x - monsterImg->getwidth() / 2;
+        int finalDrawY = (int)drawY - monsterImg->getheight() / 2;
+        
+        // 使用透明绘制，像其他怪物一样处理
+        imgManager->DrawImageWithTransparency(monsterImg, drawX, finalDrawY);
+        
+    } else {
+        // 备用方案
+        useImageRendering = false;
+        RenderWithGeometry();
+        return;
+    }
+    
+    // 绘制血条（如果血量不满） - 使用与其他怪物相同的样式
+    if (health < maxHealth) {
+        int barWidth = 30;  // 改为与其他怪物一致的宽度
+        int barHeight = 4;  // 改为与其他怪物一致的高度
+        int barX = (int)(position.x - barWidth / 2);
+        int barY = (int)(position.y + hoverOffset - radius - 8); // 保持浮动效果但使用一致的位置
+
+        // 背景
+        setfillcolor(RGB(64, 64, 64));
+        solidrectangle(barX, barY, barX + barWidth, barY + barHeight);
+
+        // 血量 - 4级怪物使用深紫色血条
+        int healthWidth = (barWidth * health) / maxHealth;
+        setfillcolor(RGB(128, 0, 255)); // 深紫色血条，与其他等级保持一致的颜色系统
+        solidrectangle(barX, barY, barX + healthWidth, barY + barHeight);
+        
+        // 边框
+        setlinecolor(WHITE);
+        rectangle(barX, barY, barX + barWidth, barY + barHeight);
+    }
+    
+    // 移除状态文字显示
+    // 注释掉原来的状态文本代码
+    /*
+    TCHAR stateText[20];
+    switch (currentState) {
+        case Monster4State::MOVING:
+            _tcscpy_s(stateText, _T("移动"));
+            break;
+        case Monster4State::MELEE_ATTACK:
+            _tcscpy_s(stateText, _T("近战"));
+            break;
+        case Monster4State::RANGE_ATTACK:
+            _tcscpy_s(stateText, _T("远程"));
+            break;
+    }
+    
+    settextcolor(RGB(255, 255, 0));
+    settextstyle(10, 0, _T("SimHei"));
+    outtextxy((int)position.x - 10, (int)(position.y + hoverOffset + radius + 10), stateText);
+    */
 }
 
 void Enemy::RenderWithImage() {
@@ -290,6 +533,8 @@ void Enemy::RenderWithImage() {
             healthColor = RGB(255, 150, 0);   // 橙色血条
         } else if (level == 3) {
             healthColor = RGB(255, 0, 255);   // 紫色血条
+        } else if (level == 4) {
+            healthColor = RGB(128, 0, 255);   // 深紫色血条
         } else {
             healthColor = RGB(150, 150, 150); // 灰色血条
         }
@@ -318,80 +563,44 @@ void Enemy::RenderWithGeometry() {
             enemyColor = RGB(255, 0, 255);  // 紫色
             break;      
         case 4: 
-            enemyColor = RGB(100, 0, 255);  // 深紫色
+            enemyColor = RGB(128, 0, 255);  // 深紫色（与血条颜色一致）
             break;      
         default: 
             enemyColor = RGB(50, 50, 50);   // 深灰色
             break;      
     }
     
+    // 4级怪物的浮动效果
+    float drawY = (level == 4) ? position.y + hoverOffset : position.y;
+    
     // 绘制敌人主体
     setfillcolor(enemyColor);
-    solidcircle((int)position.x, (int)position.y, (int)radius);
+    solidcircle((int)position.x, (int)drawY, (int)radius);
     
     // 添加边框
     setlinecolor(WHITE);
-    circle((int)position.x, (int)position.y, (int)radius);
+    circle((int)position.x, (int)drawY, (int)radius);
     
-    // 添加不同等级的动画效果
-    if (isMoving) {
-        if (level == 1) {
-            // 1级：简单的眼睛闪烁
-            if (currentFrame == 1) {
-                setfillcolor(WHITE);
-                solidcircle((int)(position.x - 5), (int)(position.y - 3), 2);
-                solidcircle((int)(position.x + 5), (int)(position.y - 3), 2);
-                
-                setfillcolor(BLACK);
-                solidcircle((int)(position.x - 5), (int)(position.y - 3), 1);
-                solidcircle((int)(position.x + 5), (int)(position.y - 3), 1);
-            }
-        } else if (level == 2) {
-            // 2级：眼睛发光效果
-            if (currentFrame == 2 || currentFrame == 5) {
-                setfillcolor(RGB(255, 255, 0));
-                solidcircle((int)(position.x - 6), (int)(position.y - 4), 3);
-                solidcircle((int)(position.x + 6), (int)(position.y - 4), 3);
-                
-                setfillcolor(RGB(255, 0, 0));
-                solidcircle((int)(position.x - 6), (int)(position.y - 4), 1);
-                solidcircle((int)(position.x + 6), (int)(position.y - 4), 1);
-            }
-            
-            if (currentFrame == 3 || currentFrame == 6) {
-                setlinecolor(RGB(255, 150, 0));
+    // 4级怪物特殊效果
+    if (level == 4) {
+        switch (currentState) {
+            case Monster4State::MELEE_ATTACK:
+                // 近战状态 - 红色光环
+                setlinecolor(RGB(255, 100, 100));
                 setlinestyle(PS_SOLID, 2);
-                circle((int)position.x, (int)position.y, (int)(radius + 3));
-            }
-        } else if (level == 3) {
-            // 3级：更高级的动画效果
-            if (currentFrame == 1 || currentFrame == 3) {
-                // 紫色发光眼睛
-                setfillcolor(RGB(255, 0, 255));
-                solidcircle((int)(position.x - 7), (int)(position.y - 5), 4);
-                solidcircle((int)(position.x + 7), (int)(position.y - 5), 4);
+                circle((int)position.x, (int)drawY, (int)(radius + 5));
+                break;
                 
-                setfillcolor(RGB(255, 255, 255));
-                solidcircle((int)(position.x - 7), (int)(position.y - 5), 2);
-                solidcircle((int)(position.x + 7), (int)(position.y - 5), 2);
-            }
-            
-            if (currentFrame == 2) {
-                // 双重脉冲环
-                setlinecolor(RGB(255, 0, 255));
-                setlinestyle(PS_SOLID, 3);
-                circle((int)position.x, (int)position.y, (int)(radius + 5));
-                circle((int)position.x, (int)position.y, (int)(radius + 8));
-            }
-            
-            // 角上的装饰
-            if (currentFrame == 0 || currentFrame == 2) {
-                setfillcolor(RGB(150, 0, 150));
-                solidcircle((int)(position.x - 8), (int)(position.y - 8), 3);
-                solidcircle((int)(position.x + 8), (int)(position.y - 8), 3);
-            }
+            case Monster4State::RANGE_ATTACK:
+                // 远程状态 - 蓝色光环
+                setlinecolor(RGB(100, 150, 255));
+                setlinestyle(PS_SOLID, 2);
+                circle((int)position.x, (int)drawY, (int)(radius + 8));
+                break;
         }
     }
+    
+    // 添加其他等级的动画效果...（保持原有逻辑）
     
     // 绘制等级标识
     if (level > 1) {
@@ -399,7 +608,7 @@ void Enemy::RenderWithGeometry() {
         settextstyle(12, 0, _T("Arial"));
         TCHAR levelText[10];
         _stprintf_s(levelText, _T("%d"), level);
-        outtextxy((int)position.x - 5, (int)position.y - 5, levelText);
+        outtextxy((int)position.x - 5, (int)drawY - 5, levelText);
     }
 
     // 绘制血条
@@ -407,25 +616,30 @@ void Enemy::RenderWithGeometry() {
         int barWidth = 30;
         int barHeight = 4;
         int barX = (int)(position.x - barWidth / 2);
-        int barY = (int)(position.y - radius - 8);
+        int barY = (int)(drawY - radius - 8); // 使用浮动后的Y坐标
 
-        setfillcolor(DARKGRAY);
+        setfillcolor(RGB(64, 64, 64));
         solidrectangle(barX, barY, barX + barWidth, barY + barHeight);
 
         int healthWidth = (barWidth * health) / maxHealth;
         
         COLORREF healthBarColor;
         if (level == 1) {
-            healthBarColor = GREEN;
+            healthBarColor = RGB(255, 100, 100); // 红色
         } else if (level == 2) {
-            healthBarColor = RGB(255, 165, 0); // 橙色
+            healthBarColor = RGB(255, 150, 0);   // 橙色
         } else if (level == 3) {
-            healthBarColor = RGB(255, 0, 255); // 紫色
+            healthBarColor = RGB(255, 0, 255);   // 紫色
+        } else if (level == 4) {
+            healthBarColor = RGB(128, 0, 255);   // 深紫色
         } else {
-            healthBarColor = RGB(128, 128, 128); // 灰色
+            healthBarColor = RGB(150, 150, 150); // 灰色
         }
         
         setfillcolor(healthBarColor);
         solidrectangle(barX, barY, barX + healthWidth, barY + barHeight);
+        
+        setlinecolor(WHITE);
+        rectangle(barX, barY, barX + barWidth, barY + barHeight);
     }
 }

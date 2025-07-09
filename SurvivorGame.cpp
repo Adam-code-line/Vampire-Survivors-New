@@ -12,16 +12,12 @@ void SurvivorGame::Run() {
         return; // 用户选择退出
     }
     
-    // 显示角色选择菜单
+    // 显示角色选择菜单（不要先关闭窗口）
     selectedCharacter = ShowCharacterSelection();
     
-    // 重新初始化图形窗口用于游戏
-    closegraph();
-    initgraph(WINDOW_WIDTH, WINDOW_HEIGHT);
-	setbkmode(TRANSPARENT);
-    
-    // 移除原来的背景色设置，因为现在使用图片背景
-    // setbkcolor(RGB(34, 139, 34));
+    // 清理屏幕，准备游戏界面
+    cleardevice();
+    setbkmode(TRANSPARENT);
     
     // 加载图片资源
     ImageManager* imgManager = ImageManager::GetInstance();
@@ -137,6 +133,13 @@ void SurvivorGame::Update() {
     
     for (auto& item : items) {
         item->Update(deltaTime);
+    }
+
+    // 为4级怪物设置容器引用
+    for (auto& enemy : enemies) {
+        if (enemy->GetLevel() == 4) {
+            enemy->SetGameContainers(&bullets, &meleeAttacks);
+        }
     }
 
     HandleCollisions();
