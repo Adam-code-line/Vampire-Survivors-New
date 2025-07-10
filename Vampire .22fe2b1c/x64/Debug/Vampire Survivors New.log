@@ -18,6 +18,9 @@ D:\code\vsstucode\Vampire Survivors New\MagicBall.h(1,1): warning C4819: 该文�
 D:\code\vsstucode\Vampire Survivors New\EnemySpawner.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
   (编译源文件“SurvivorGame.cpp”)
   
+D:\code\vsstucode\Vampire Survivors New\VictoryScreen.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+  (编译源文件“SurvivorGame.cpp”)
+  
 D:\code\vsstucode\Vampire Survivors New\MusicManager.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
   (编译源文件“SurvivorGame.cpp”)
   
@@ -27,5 +30,4 @@ D:\code\vsstucode\Vampire Survivors New\EnhancedWeaponSystem.h(1,1): warning C48
 D:\code\vsstucode\Vampire Survivors New\ImageManager.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
   (编译源文件“SurvivorGame.cpp”)
   
-D:\code\vsstucode\Vampire Survivors New\SurvivorGame.cpp(844,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
   Vampire Survivors New.vcxproj -> D:\code\vsstucode\Vampire Survivors New\x64\Debug\Vampire Survivors New.exe

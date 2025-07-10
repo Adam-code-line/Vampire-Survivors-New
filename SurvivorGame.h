@@ -14,6 +14,7 @@
 #include "Character.h"
 #include "MainMenu.h"
 #include "StartScreen.h"
+#include "VictoryScreen.h"  // 新增
 #include "MusicManager.h"
 #include <graphics.h>
 #include <vector>
@@ -23,6 +24,12 @@
 #include <conio.h>
 #include <algorithm>
 #include "EnhancedWeaponSystem.h"
+
+enum class GameResult {  // 新增
+    CONTINUE,
+    RETURN_TO_MENU,
+    EXIT_GAME
+};
 
 class SurvivorGame {
 private:
@@ -61,8 +68,8 @@ private:
     void Render();
     void DrawUI();
     void ShowGameOver();
-    void ShowVictory();  // 新增：显示胜利界面
-    bool ShowEndGameChoice();  // 新增：显示结束游戏选择界面
+    GameResult ShowVictory();  // 修改返回类型
+    GameResult ShowEndGameChoice();  // 修改返回类型
     void DrawEnemyLevelInfo();
     void DrawSkillUI();
     void DrawItemEffects();

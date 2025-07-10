@@ -87,6 +87,9 @@
     <ClCompile Include="MusicManager.cpp">
       <Filter>mus</Filter>
     </ClCompile>
+    <ClCompile Include="VictoryScreen.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Vector2.h">
@@ -154,6 +157,9 @@
     </ClInclude>
     <ClInclude Include="MusicManager.h">
       <Filter>mus</Filter>
+    </ClInclude>
+    <ClInclude Include="VictoryScreen.h">
+      <Filter>Game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

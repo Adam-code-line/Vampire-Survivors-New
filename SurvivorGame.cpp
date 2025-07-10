@@ -3,72 +3,88 @@
 #include "MusicManager.h"
 
 // 定义通关时间为10分钟（600秒）
-const float SurvivorGame::WIN_TIME = 6.0f;
+const float SurvivorGame::WIN_TIME = 600.0f;
 
 SurvivorGame::SurvivorGame() : gameTime(0), gameOver(false), gameWon(false), score(0), 
                                selectedCharacter(CharacterType::WARRIOR) {
 }
 
 void SurvivorGame::Run() {
-    bool continueGame = true;
+    bool continueRunning = true;
     
-    while (continueGame) {
+    while (continueRunning) {
         // 显示开始界面
         StartScreen startScreen;
         if (!startScreen.ShowStartScreen()) {
             break; // 用户选择退出
         }
         
-        // 显示角色选择菜单
-        selectedCharacter = ShowCharacterSelection();
+        bool returnToMenu = false;
         
-        // 清理屏幕，准备游戏界面
-        cleardevice();
-        setbkmode(TRANSPARENT);
-        
-        // 加载图片资源
-        ImageManager* imgManager = ImageManager::GetInstance();
-        imgManager->LoadCharacterImages();
-        
-        // 加载并播放背景音乐
-        MusicManager* musicManager = MusicManager::GetInstance();
-        musicManager->LoadGameMusic();
-        
-        // 初始化游戏
-        InitializeGame(selectedCharacter);
-        
-        // 设置中文字体支持
-        LOGFONT font;
-        gettextstyle(&font);
-        _tcscpy_s(font.lfFaceName, _T("SimHei"));
-        font.lfCharSet = GB2312_CHARSET;
-        font.lfQuality = ANTIALIASED_QUALITY;
-        settextstyle(&font);
-        
-        BeginBatchDraw();
+        while (!returnToMenu && continueRunning) {
+            // 显示角色选择菜单
+            selectedCharacter = ShowCharacterSelection();
+            
+            // 清理屏幕，准备游戏界面
+            cleardevice();
+            setbkmode(TRANSPARENT);
+            
+            // 加载图片资源
+            ImageManager* imgManager = ImageManager::GetInstance();
+            imgManager->LoadCharacterImages();
+            
+            // 加载并播放背景音乐
+            MusicManager* musicManager = MusicManager::GetInstance();
+            musicManager->LoadGameMusic();
+            
+            // 初始化游戏
+            InitializeGame(selectedCharacter);
+            
+            // 设置中文字体支持
+            LOGFONT font;
+            gettextstyle(&font);
+            _tcscpy_s(font.lfFaceName, _T("SimHei"));
+            font.lfCharSet = GB2312_CHARSET;
+            font.lfQuality = ANTIALIASED_QUALITY;
+            settextstyle(&font);
+            
+            BeginBatchDraw();
 
-        // 游戏主循环
-        while (!gameOver && !gameWon && !_kbhit()) {
-            Update();
-            Render();
-            Sleep(16);
-        }
+            // 游戏主循环
+            while (!gameOver && !gameWon && !_kbhit()) {
+                Update();
+                Render();
+                Sleep(16);
+            }
 
-        EndBatchDraw();
-        
-        // 显示结束界面
-        if (gameWon) {
-            ShowVictory();
-        } else {
-            ShowGameOver();
+            EndBatchDraw();
+            
+            // 显示结束界面并处理结果
+            GameResult result;
+            if (gameWon) {
+                result = ShowVictory();
+            } else {
+                result = ShowEndGameChoice();
+            }
+            
+            // 根据结果决定下一步
+            switch (result) {
+                case GameResult::CONTINUE:
+                    // 重新开始当前游戏循环
+                    break;
+                case GameResult::RETURN_TO_MENU:
+                    returnToMenu = true;
+                    break;
+                case GameResult::EXIT_GAME:
+                    continueRunning = false;
+                    returnToMenu = true;
+                    break;
+            }
+            
+            // 清理资源
+            imgManager->ReleaseAll();
+            musicManager->StopMusic();
         }
-        
-        // 显示选择界面：重新开始或退出
-        continueGame = ShowEndGameChoice();
-        
-        // 清理资源
-        imgManager->ReleaseAll();
-        musicManager->StopMusic();
     }
     
     closegraph();
@@ -696,107 +712,29 @@ void SurvivorGame::DrawItemEffects() {
     }
 }
 
+GameResult SurvivorGame::ShowVictory() {
+    // 计算击败敌人数量
+    int enemiesDefeated = score / 15; // 基于分数估算
+    
+    VictoryScreen victoryScreen(score, player->GetLevel(), enemiesDefeated, gameTime);
+    VictoryChoice choice = victoryScreen.ShowVictoryScreen();
+    
+    switch (choice) {
+        case VictoryChoice::RETURN_TO_MENU:
+            return GameResult::RETURN_TO_MENU;
+        case VictoryChoice::EXIT_GAME:
+            return GameResult::EXIT_GAME;
+        default:
+            return GameResult::RETURN_TO_MENU;
+    }
+}
+
 void SurvivorGame::ShowGameOver() {
-    // 在游戏结束界面也使用背景图片
-    ImageManager* imgManager = ImageManager::GetInstance();
-    imgManager->DrawScaledBackground(WINDOW_WIDTH, WINDOW_HEIGHT);
-    
-    // 添加半透明遮罩
-    setfillcolor(RGB(0, 0, 0));
-    setfillstyle(BS_SOLID);
-    // 创建半透明效果
-    for (int alpha = 0; alpha < 128; alpha += 8) {
-        setfillcolor(RGB(alpha/5, alpha/5, alpha/5));
-        solidrectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    }
-
-    settextcolor(RED);
-    settextstyle(48, 0, _T("Arial"));
-    outtextxy(WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT / 2 - 100, _T("GAME OVER"));
-
-    settextcolor(WHITE);
-    settextstyle(24, 0, _T("Arial"));
-
-    TCHAR finalScore[100];
-    _stprintf_s(finalScore, _T("Final Score: %d"), score);
-    outtextxy(WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 - 50, finalScore);
-
-    TCHAR survivalTime[100];
-    int minutes = (int)gameTime / 60;
-    int seconds = (int)gameTime % 60;
-    _stprintf_s(survivalTime, _T("Survived: %02d:%02d"), minutes, seconds);
-    outtextxy(WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 - 20, survivalTime);
-
-    outtextxy(WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT / 2 + 50, _T("Press any key to exit"));
-
-    FlushBatchDraw();
-    _getch();
+    GameResult result = ShowEndGameChoice();
+    // 这个方法现在主要用于兼容性，实际逻辑在 ShowEndGameChoice 中
 }
 
-void SurvivorGame::ShowVictory() {
-    // 使用背景图片
-    ImageManager* imgManager = ImageManager::GetInstance();
-    imgManager->DrawScaledBackground(WINDOW_WIDTH, WINDOW_HEIGHT);
-    
-    // 添加胜利光效
-    for (int i = 0; i < 50; i++) {
-        DWORD time = GetTickCount();
-        float angle = (time * 0.001f) + i * 0.126f; // 每个光点不同的角度
-        float radius = 100.0f + sin(time * 0.002f + i) * 50.0f;
-        
-        int x = WINDOW_WIDTH / 2 + (int)(cos(angle) * radius);
-        int y = WINDOW_HEIGHT / 2 + (int)(sin(angle) * radius);
-        
-        setfillcolor(RGB(255, 215, 0)); // 金色光点
-        solidcircle(x, y, 3);
-    }
-    
-    // 胜利标题 - 阴影效果
-    settextcolor(RGB(50, 50, 50));
-    settextstyle(64, 0, _T("Arial"));
-    int titleWidth = textwidth(_T("VICTORY!"));
-    outtextxy((WINDOW_WIDTH - titleWidth) / 2 + 4, WINDOW_HEIGHT / 2 - 120 + 4, _T("VICTORY!"));
-    
-    // 胜利标题 - 主体
-    settextcolor(RGB(255, 215, 0)); // 金色
-    outtextxy((WINDOW_WIDTH - titleWidth) / 2, WINDOW_HEIGHT / 2 - 120, _T("VICTORY!"));
-    
-    // 副标题
-    settextcolor(RGB(255, 255, 255));
-    settextstyle(28, 0, _T("Arial"));
-    int subtitleWidth = textwidth(_T("You survived 10 minutes!"));
-    outtextxy((WINDOW_WIDTH - subtitleWidth) / 2, WINDOW_HEIGHT / 2 - 50, _T("You survived 10 minutes!"));
-
-    // 统计信息
-    settextcolor(RGB(200, 200, 200));
-    settextstyle(20, 0, _T("Arial"));
-
-    TCHAR finalScore[100];
-    _stprintf_s(finalScore, _T("Final Score: %d"), score);
-    int scoreWidth = textwidth(finalScore);
-    outtextxy((WINDOW_WIDTH - scoreWidth) / 2, WINDOW_HEIGHT / 2 - 10, finalScore);
-
-    TCHAR finalLevel[100];
-    _stprintf_s(finalLevel, _T("Final Level: %d"), player->GetLevel());
-    int levelWidth = textwidth(finalLevel);
-    outtextxy((WINDOW_WIDTH - levelWidth) / 2, WINDOW_HEIGHT / 2 + 20, finalLevel);
-
-    TCHAR enemiesDefeated[100];
-    _stprintf_s(enemiesDefeated, _T("Total Enemies Defeated: %d"), score / 15); // 估算击败的敌人数
-    int enemiesWidth = textwidth(enemiesDefeated);
-    outtextxy((WINDOW_WIDTH - enemiesWidth) / 2, WINDOW_HEIGHT / 2 + 50, enemiesDefeated);
-
-    // 提示文字
-    settextcolor(RGB(255, 255, 100));
-    settextstyle(18, 0, _T("Arial"));
-    int promptWidth = textwidth(_T("Press any key to continue"));
-    outtextxy((WINDOW_WIDTH - promptWidth) / 2, WINDOW_HEIGHT / 2 + 100, _T("Press any key to continue"));
-
-    FlushBatchDraw();
-    _getch();
-}
-
-bool SurvivorGame::ShowEndGameChoice() {
+GameResult SurvivorGame::ShowEndGameChoice() {
     // 使用背景图片
     ImageManager* imgManager = ImageManager::GetInstance();
     imgManager->DrawScaledBackground(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -808,32 +746,56 @@ bool SurvivorGame::ShowEndGameChoice() {
         solidrectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     }
 
-    // 标题
-    settextcolor(RGB(255, 215, 0));
+    // 游戏结束标题
+    settextcolor(RGB(255, 100, 100));
     settextstyle(48, 0, _T("Arial"));
-    int titleWidth = textwidth(_T("Game Complete"));
-    outtextxy((WINDOW_WIDTH - titleWidth) / 2, WINDOW_HEIGHT / 2 - 100, _T("Game Complete"));
+    int titleWidth = textwidth(_T("GAME OVER"));
+    outtextxy((WINDOW_WIDTH - titleWidth) / 2, WINDOW_HEIGHT / 2 - 150, _T("GAME OVER"));
+
+    // 统计信息
+    settextcolor(WHITE);
+    settextstyle(20, 0, _T("Arial"));
+    
+    TCHAR finalScore[100];
+    _stprintf_s(finalScore, _T("Final Score: %d"), score);
+    int scoreWidth = textwidth(finalScore);
+    outtextxy((WINDOW_WIDTH - scoreWidth) / 2, WINDOW_HEIGHT / 2 - 80, finalScore);
+
+    TCHAR survivalTime[100];
+    int minutes = (int)gameTime / 60;
+    int seconds = (int)gameTime % 60;
+    _stprintf_s(survivalTime, _T("Survived: %02d:%02d"), minutes, seconds);
+    int timeWidth = textwidth(survivalTime);
+    outtextxy((WINDOW_WIDTH - timeWidth) / 2, WINDOW_HEIGHT / 2 - 50, survivalTime);
 
     // 选项
-    settextcolor(WHITE);
+    settextcolor(RGB(200, 200, 200));
     settextstyle(24, 0, _T("Arial"));
     
-    int option1Width = textwidth(_T("1. Play Again"));
-    int option2Width = textwidth(_T("2. Exit Game"));
+    LPCTSTR option1 = _T("1. Try Again");
+    LPCTSTR option2 = _T("2. Return to Main Menu");
+    LPCTSTR option3 = _T("3. Exit Game");
+    
+    int option1Width = textwidth(option1);
+    int option2Width = textwidth(option2);
+    int option3Width = textwidth(option3);
     
     int option1X = (WINDOW_WIDTH - option1Width) / 2;
-    int option1Y = WINDOW_HEIGHT / 2;
-    outtextxy(option1X, option1Y, _T("1. Play Again"));
-
+    int option1Y = WINDOW_HEIGHT / 2 + 20;
     int option2X = (WINDOW_WIDTH - option2Width) / 2;
-    int option2Y = WINDOW_HEIGHT / 2 + 40;
-    outtextxy(option2X, option2Y, _T("2. Exit Game"));
+    int option2Y = WINDOW_HEIGHT / 2 + 60;
+    int option3X = (WINDOW_WIDTH - option3Width) / 2;
+    int option3Y = WINDOW_HEIGHT / 2 + 100;
+    
+    outtextxy(option1X, option1Y, option1);
+    outtextxy(option2X, option2Y, option2);
+    outtextxy(option3X, option3Y, option3);
 
     // 提示
-    settextcolor(RGB(200, 200, 200));
-    settextstyle(18, 0, _T("Arial"));
-    int promptWidth = textwidth(_T("Click on an option to continue"));
-    outtextxy((WINDOW_WIDTH - promptWidth) / 2, WINDOW_HEIGHT / 2 + 100, _T("Click on an option to continue"));
+    settextcolor(RGB(150, 150, 150));
+    settextstyle(16, 0, _T("Arial"));
+    int promptWidth = textwidth(_T("Click on an option or press 1/2/3"));
+    outtextxy((WINDOW_WIDTH - promptWidth) / 2, WINDOW_HEIGHT / 2 + 150, _T("Click on an option or press 1/2/3"));
 
     FlushBatchDraw();
 
@@ -845,13 +807,32 @@ bool SurvivorGame::ShowEndGameChoice() {
                 // 检测鼠标点击位置
                 if (mouse.x >= option1X && mouse.x <= option1X + option1Width &&
                     mouse.y >= option1Y && mouse.y <= option1Y + 24) {
-                    return true;  // 重新开始
+                    return GameResult::CONTINUE;  // 重新开始
                 } else if (mouse.x >= option2X && mouse.x <= option2X + option2Width &&
                            mouse.y >= option2Y && mouse.y <= option2Y + 24) {
-                    return false; // 退出游戏
+                    return GameResult::RETURN_TO_MENU; // 返回主菜单
+                } else if (mouse.x >= option3X && mouse.x <= option3X + option3Width &&
+                           mouse.y >= option3Y && mouse.y <= option3Y + 24) {
+                    return GameResult::EXIT_GAME; // 退出游戏
                 }
             }
         }
+        
+        // 处理键盘输入
+        if (_kbhit()) {
+            int key = _getch();
+            switch (key) {
+                case '1':
+                    return GameResult::CONTINUE;
+                case '2':
+                    return GameResult::RETURN_TO_MENU;
+                case '3':
+                    return GameResult::EXIT_GAME;
+                case 27: // ESC - 返回主菜单
+                    return GameResult::RETURN_TO_MENU;
+            }
+        }
+        
         Sleep(50);
     }
 }

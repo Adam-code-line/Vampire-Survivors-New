@@ -145,6 +145,7 @@
     <ClCompile Include="StartScreen.cpp" />
     <ClCompile Include="SurvivorGame.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="VictoryScreen.cpp" />
     <ClCompile Include="WeaponSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +170,7 @@
     <ClInclude Include="StartScreen.h" />
     <ClInclude Include="SurvivorGame.h" />
     <ClInclude Include="Vector2.h" />
+    <ClInclude Include="VictoryScreen.h" />
     <ClInclude Include="WeaponSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
