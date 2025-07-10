@@ -14,7 +14,7 @@
 #include "Character.h"
 #include "MainMenu.h"
 #include "StartScreen.h"
-#include "MusicManager.h"  // 添加音乐管理器头文件
+#include "MusicManager.h"
 #include <graphics.h>
 #include <vector>
 #include <memory>
@@ -30,7 +30,7 @@ private:
     std::vector<std::unique_ptr<Enemy>> enemies;
     std::vector<std::unique_ptr<Bullet>> bullets;
     std::vector<std::unique_ptr<MeleeAttack>> meleeAttacks;
-    std::vector<std::unique_ptr<MagicBall>> magicBalls;  // 新增魔法球容器
+    std::vector<std::unique_ptr<MagicBall>> magicBalls;
     std::vector<std::unique_ptr<ExperienceGem>> gems;
     std::vector<std::unique_ptr<Item>> items;
     std::unique_ptr<EnhancedWeaponSystem> weaponSystem;
@@ -40,9 +40,12 @@ private:
 
     float gameTime;
     bool gameOver;
+    bool gameWon;  // 新增：游戏胜利标志
     int score;
     DWORD lastTime;
-    
+
+    static const float WIN_TIME; // 新增：通关时间常量
+
     CharacterType selectedCharacter;
 
 public:
@@ -58,6 +61,8 @@ private:
     void Render();
     void DrawUI();
     void ShowGameOver();
+    void ShowVictory();  // 新增：显示胜利界面
+    bool ShowEndGameChoice();  // 新增：显示结束游戏选择界面
     void DrawEnemyLevelInfo();
     void DrawSkillUI();
     void DrawItemEffects();
