@@ -1,7 +1,7 @@
 #pragma once
 #include <cmath>
 
-// ����������
+// 2D Vector
 struct Vector2 {
     float x, y;
 

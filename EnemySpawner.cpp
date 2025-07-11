@@ -6,8 +6,8 @@ EnemySpawner::EnemySpawner(Player* p) : player(p), spawnTimer(0), spawnRate(2.0f
 }
 
 int EnemySpawner::CalculateEnemyLevel(float gameTime) {
-    // 每60秒提升一个等级
-    int baseLevel = (int)(gameTime / 70.0f) + 1;
+    // 每70秒提升一个等级
+    int baseLevel = (int)(gameTime / 75.0f) + 1;
 
     // 限制最大等级为4
     return min(baseLevel, 4);

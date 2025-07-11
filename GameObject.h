@@ -1,7 +1,7 @@
 #pragma once
 #include "Vector2.h"
 
-// ��Ϸ�������
+// 游戏对象基类
 class GameObject {
 public:
     Vector2 position;

@@ -293,7 +293,7 @@ void Player::LevelUp() {
     speed += 5.0f; // 每次升级增加6点速度
     level++;
     experience = 0;
-	experienceToNext += 100; // 每次升级增加90点经验需求
+	experienceToNext += 110; // 每次升级增加110点经验需求
     maxHealth += 10;
     health = maxHealth;
 }

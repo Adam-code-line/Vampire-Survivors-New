@@ -43,8 +43,8 @@ void Enemy::SetLevel(int newLevel) {
         speed = 70.0f;                    // 提升移动速度（从50.0f提升到70.0f）
         health = maxHealth = 300;         // 大幅提升血量（从100提升到150）
         experienceValue = 50;             // 更多经验（从40提升到50）
-        animationSpeed = 0.12f;           // 更快的动画速度（从0.15f减少到0.12f）
-        attackCooldown = 1.5f;            // 大幅减少攻击冷却（从2.0f减少到1.5f）
+		animationSpeed = 0.15f;         // 动画速度（0.15f）
+        attackCooldown = 2.5f;            // 增加攻击冷却(从1.5增加到2.5)
         hoverSpeed = 2.5f;                // 更快的浮动速度（从2.0f提升到2.5f）
     } else {
         // 大幅提升其他等级怪物的属性
@@ -154,13 +154,7 @@ void Enemy::UpdateMonster4State(float deltaTime) {
     switch (currentState) {
         case Monster4State::MOVING:
             // 检查是否可以攻击 - 增加攻击范围和触发频率
-            if (distanceToPlayer <= 80.0f && attackTimer <= 0) {
-                // 近距离 - 近战攻击（范围从60增加到80）
-                currentState = Monster4State::MELEE_ATTACK;
-                stateTimer = 0;
-                attackTimer = attackCooldown;
-                attackExecuted = false;
-            } else if (distanceToPlayer <= 350.0f && distanceToPlayer > 80.0f && attackTimer <= 0) {
+       if (distanceToPlayer <= 350.0f && attackTimer <= 0) {
                 // 中远距离 - 远程攻击（范围从300增加到350）
                 currentState = Monster4State::RANGE_ATTACK;
                 stateTimer = 0;
@@ -168,19 +162,7 @@ void Enemy::UpdateMonster4State(float deltaTime) {
                 attackExecuted = false;
             }
             break;
-            
-        case Monster4State::MELEE_ATTACK:
-            // 缩短近战攻击蓄力时间：0.2秒后执行攻击，0.6秒后结束（更快）
-            if (!attackExecuted && stateTimer >= 0.2f) {
-                PerformMeleeAttack();
-                attackExecuted = true;
-            }
-            if (stateTimer >= 0.6f) {
-                currentState = Monster4State::MOVING;
-                stateTimer = 0;
-            }
-            break;
-            
+
         case Monster4State::RANGE_ATTACK:
             // 缩短远程攻击蓄力时间：0.3秒后执行攻击，0.7秒后结束（更快）
             if (!attackExecuted && stateTimer >= 0.3f) {
@@ -213,8 +195,8 @@ void Enemy::PerformRangeAttack() {
     
     // 发射更快更强的魔法球
     Vector2 direction = (target->position - position).Normalized();
-    auto magicBall = std::make_unique<MagicBall>(position, direction, 250.0f); // 提升速度（从200.0f提升到250.0f）
-    magicBall->SetDamage(45); // 大幅提升魔法球伤害（从35提升到45）
+    auto magicBall = std::make_unique<MagicBall>(position, direction, 200.0f); // 魔法球速度（200.0ff）
+    magicBall->SetDamage(40); // 魔法球伤害（40）
     magicBalls->push_back(std::move(magicBall));
 }
 
